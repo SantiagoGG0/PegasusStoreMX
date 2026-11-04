@@ -5,8 +5,8 @@ region: nyc  # Change to: nyc | sfo | ams | sgp | lon | fra | blr | syd | tor
 services:
   - name: web
     github:
-      repo: TU_USUARIO/TU_REPO      # ← Cambia esto
-      branch: main                   # ← o master / SantiagoCode
+      repo: SantiagoGG0/PegasusStoreMX
+      branch: main
       deploy_on_push: true
     build_command: |
       pip install -r requirements.txt
