@@ -161,14 +161,26 @@ def compute_price(cost, suggested, category=None) -> PriceDecision:
     # pérdida. Se ignora y manda el piso por costo.
     if suggested > 0 and suggested * max_over_suggested(cost) > cost:
         cap = suggested * max_over_suggested(cost)
+        # En Dropi México el sugerido está casi pegado al costo (≈1,3×): no es
+        # el precio de mercado. El techo también puede ser un múltiplo del
+        # costo, para que el precio absorba parte de la guía.
+        cost_cap = cost * _d(getattr(settings, "PRICING_MAX_COST_MULTIPLE", 0))
+        cap = max(cap, cost_cap)
         market = min(max(market, suggested), cap)
 
-    free_price = cost + _d(settings.SHIPPING_ZONE_A_COST) + keep
+    guide = _d(settings.SHIPPING_ZONE_A_COST)
+    free_price = cost + guide + keep
     paid_price = cost + keep
     if cap is None or free_price <= cap:
         price = max(market, free_price)
     elif paid_price <= cap:
-        price = max(market, paid_price)
+        # No alcanza para envío gratis: el precio sube hasta dejar el envío en
+        # PRICING_TARGET_SHIPPING (o hasta el techo). El total del cliente y la
+        # ganancia de la tienda son los mismos; solo baja el envío visible,
+        # que es lo que más hace abandonar la compra.
+        target = _d(getattr(settings, "PRICING_TARGET_SHIPPING", guide))
+        target_price = cost + keep + max(Decimal("0"), guide - target)
+        price = max(market, paid_price, min(cap, target_price))
     else:
         price = market
 

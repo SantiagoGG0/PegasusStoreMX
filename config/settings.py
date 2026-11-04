@@ -412,6 +412,12 @@ PRICING_MIN_GAIN_LADDER = [
 PRICING_MAX_OVER_SUGGESTED = config("PRICING_MAX_OVER_SUGGESTED", default=1.3, cast=float)
 PRICING_EXPENSIVE_FROM = 500  # MXN de costo
 PRICING_MAX_OVER_SUGGESTED_EXPENSIVE = config("PRICING_MAX_OVER_SUGGESTED_EXPENSIVE", default=1.1, cast=float)
+# Techo alterno por costo: el sugerido de Dropi México (~1,3× el costo) no es
+# el precio de mercado. 0 = sin techo por costo.
+PRICING_MAX_COST_MULTIPLE = config("PRICING_MAX_COST_MULTIPLE", default=3.0, cast=float)
+# Si el precio no alcanza para envío gratis, sube hasta que el envío cobrado
+# quede en este valor (o hasta el techo). Mismo total y misma ganancia.
+PRICING_TARGET_SHIPPING = config("PRICING_TARGET_SHIPPING", default=99, cast=int)  # MXN
 PRICING_DEFAULT_PROFILE = {"markup": 1.8, "weight": 1.0}
 # Claves = Category.dropi_id sin el prefijo "store:". weight = prioridad en el
 # ranking del catálogo (categorías prioritarias del negocio > 1).

@@ -41,7 +41,70 @@ PRICING = dict(
     PRICING_MAX_OVER_SUGGESTED_EXPENSIVE=1.1,
     PRICING_DEFAULT_PROFILE={"markup": 1.8, "weight": 1.0},
     PRICING_CATEGORY_PROFILES={"belleza": {"markup": 2.0, "weight": 1.5}},
+    # Regla base (techo solo por sugerido); la absorción de la guía se prueba aparte.
+    PRICING_MAX_COST_MULTIPLE=0,
+    PRICING_TARGET_SHIPPING=120,
 )
+
+# México: techo de 3× el costo y envío objetivo de $99 con guía de $188.
+ABSORB = {**PRICING, "SHIPPING_ZONE_A_COST": 188, "COD_REJECTION_LOSS": 188,
+          "PRICING_MAX_COST_MULTIPLE": 3.0, "PRICING_TARGET_SHIPPING": 99}
+
+
+@override_settings(**ABSORB)
+class ShippingAbsorptionTests(SimpleTestCase):
+    """El sugerido de Dropi México está casi pegado al costo: el precio sube
+    para absorber la guía y el envío visible baja, sin bajar la ganancia."""
+
+    def _check(self, cost, suggested):
+        decision = compute_price(cost, suggested, "store:otros")
+        margin, keep = decision.price - cost, min_gain(cost)
+        charged = shipping_charged(margin, 188, keep)
+        return decision, charged, delivered_profit(margin, keep, 188)
+
+    def test_price_absorbs_guide_down_to_target_shipping(self):
+        # costo 127, piso 85: 127 + 85 + (188 − 99) = 301 → $309; envío 188 + 85 − 182 = 91
+        decision, charged, profit = self._check(127, 174)
+        self.assertEqual(decision.price, Decimal("309"))
+        self.assertEqual(charged, Decimal("91"))
+        self.assertLessEqual(charged, 99)
+        self.assertEqual(profit, Decimal("85"))  # nunca menos que el piso
+
+    def test_free_shipping_when_cost_cap_allows_it(self):
+        # costo 200: 200 + 188 + 85 = 473 ≤ 600 (3× costo) → $479, envío gratis
+        decision, charged, profit = self._check(200, 280)
+        self.assertEqual((decision.price, decision.status), (Decimal("479"), STATUS_FREE_SHIPPING))
+        self.assertEqual(charged, Decimal("0"))
+        self.assertEqual(profit, Decimal("91"))
+
+    def test_cheap_product_absorbs_as_much_as_the_cap_allows(self):
+        # costo 45: tope 135 → $139; el envío baja de 188 a 139 y la ganancia se mantiene
+        decision, charged, profit = self._check(45, 55)
+        self.assertEqual(decision.price, Decimal("139"))
+        self.assertEqual(charged, Decimal("139"))
+        self.assertEqual(profit, Decimal("45"))
+
+    def _old(self, cost, suggested):
+        with self.settings(PRICING_MAX_COST_MULTIPLE=0):
+            old = compute_price(cost, suggested, "store:otros")
+        margin, keep = old.price - cost, min_gain(cost)
+        return old, shipping_charged(margin, 188, keep), delivered_profit(margin, keep, 188)
+
+    def test_customer_total_does_not_change_only_the_split(self):
+        decision, charged, profit = self._check(127, 174)
+        old, old_charged, old_profit = self._old(127, 174)
+        # mismo total salvo el redondeo a ...9; menos envío visible, misma ganancia
+        self.assertLess(abs((decision.price + charged) - (old.price + old_charged)), 10)
+        self.assertLess(charged, old_charged)
+        self.assertEqual(profit, old_profit)
+
+    def test_store_never_earns_less_than_before(self):
+        for cost, suggested in ((45, 55), (127, 174), (200, 280), (500, 650)):
+            with self.subTest(cost=cost):
+                _, charged, profit = self._check(cost, suggested)
+                _, old_charged, old_profit = self._old(cost, suggested)
+                self.assertGreaterEqual(profit, old_profit)
+                self.assertLessEqual(charged, old_charged)
 
 
 @override_settings(**PRICING)
