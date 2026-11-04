@@ -19,8 +19,11 @@ on:
       task:
         description: "Qué correr"
         type: choice
-        options: [stock, galleries]
-        default: stock
+        options: [import, stock, galleries]
+        default: import
+      limit:
+        description: "import: productos nuevos por corrida (~6/min por token)"
+        default: "1200"
 
 concurrency:
   group: dropi-api
@@ -34,6 +37,8 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_URL_REQUIRED: "True"
       DROPI_TOKEN: ${{ secrets.DROPI_TOKEN }}
+      DROPI_TOKEN_2: ${{ secrets.DROPI_TOKEN_2 }}
+      DROPI_TOKEN_3: ${{ secrets.DROPI_TOKEN_3 }}
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
       # Solo para saltar los checks de arranque del servidor web (email,
       # webhook); no hay servidor en este job.
@@ -46,6 +51,15 @@ jobs:
           python-version: "3.13"
           cache: pip
       - run: pip install -r requirements.txt
+
+      # Catálogo de México: productos con costo de ~$150 o más (--min-price usa
+      # la fórmula vieja: 1,8 × costo ≥ 270), con galería completa y publicados.
+      # --skip-existing hace que cada corrida siga donde quedó la anterior.
+      - name: Importar productos nuevos con galería y publicarlos
+        if: inputs.task == 'import'
+        run: >
+          python manage.py import_products --min-price 270 --min-stock 5
+          --with-gallery --activate --skip-existing --limit ${{ inputs.limit }} --delay 10
 
       - name: Stock, costo y precio sugerido
         if: inputs.task == 'stock'
