@@ -58,8 +58,8 @@
     <div class="info-label">Dirección de envío</div>
     <div style="margin-top: 12px; line-height: 1.6;">
         <strong style="color: #000000;">{{ order.name }} {{ order.surname }}</strong><br>
-        {{ order.address }}<br>
-        {{ order.city }}, {{ order.state }}<br>
+        {{ order.full_address }}<br>
+        {{ order.city }}, {{ order.state_label }}{% if order.zip_code %}, CP {{ order.zip_code }}{% endif %}<br>
         <span style="color: #718096;">Tel:</span> {{ order.phone }}
     </div>
 </div>

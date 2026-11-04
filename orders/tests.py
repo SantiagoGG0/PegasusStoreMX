@@ -115,7 +115,7 @@ class CheckoutFormTests(TestCase):
         "address": "Calle 1",
         "state": "CMX",
         "city": "Cuauhtémoc",
-        "zip_code": "99999", "payment_method": Order.PAYMENT_COD,
+        "zip_code": "99999", "colonia": "Centro", "payment_method": Order.PAYMENT_COD,
         "accept_terms": True,
     }
 
@@ -180,6 +180,20 @@ class CheckoutFormTests(TestCase):
 
         self.assertEqual(department_code_for_city_name("Guadalajara"), "JAL")
         self.assertEqual(department_code_for_city_name("Asientos"), "AGU")
+
+    def test_colonia_is_required(self):
+        form = CheckoutForm(data={**self._BASE_DATA, "colonia": ""})
+        self.assertIn("colonia", form.errors)
+
+    def test_colonia_prefix_is_not_duplicated(self):
+        form = CheckoutForm(data={**self._BASE_DATA, "colonia": "Col. Roma Norte"})
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["colonia"], "Roma Norte")
+        order = Order(address="Calle 1", colonia="Roma Norte")
+        self.assertEqual(order.full_address, "Calle 1, Col. Roma Norte")
+
+    def test_state_is_shown_by_name_not_code(self):
+        self.assertEqual(Order(state="CMX").state_label, "Ciudad de México")
 
     def test_zip_code_is_required_and_has_five_digits(self):
         form = CheckoutForm(data={**self._BASE_DATA, "zip_code": ""})
@@ -260,7 +274,7 @@ class CheckoutCityDepartmentIntegrationTests(TestCase):
             "address": "calle 49e #83a-91",
             "state": "AGU",
             "city": "Asientos",
-            "zip_code": "99999", "payment_method": Order.PAYMENT_COD,
+            "zip_code": "99999", "colonia": "Centro", "payment_method": Order.PAYMENT_COD,
             "accept_terms": "on",
         }
         response = self.client.post(reverse("orders:checkout"), data)
@@ -278,6 +292,9 @@ class CheckoutCityDepartmentIntegrationTests(TestCase):
             (sent_payload["country"], sent_payload["state"], sent_payload["city"], sent_payload["zip_code"]),
             ("MX", "AGUASCALIENTES", "ASIENTOS", "99999"),
         )
+        # La colonia va dentro de la dirección y queda guardada aparte.
+        self.assertEqual(sent_payload["dir"], "calle 49e #83a-91, Col. Centro")
+        self.assertEqual(order.colonia, "Centro")
 
     @patch("orders.views.DropiClient")
     def test_shipping_shown_at_checkout_is_collected_on_delivery(self, mock_client_cls):
@@ -299,7 +316,7 @@ class CheckoutCityDepartmentIntegrationTests(TestCase):
         data = {
             "name": "Ana", "surname": "Ruiz", "email": "ana@example.com", "phone": "5512345678",
             "address": "Av. Juárez 1", "state": "JAL", "city": "Guadalajara",
-            "zip_code": "99999", "payment_method": Order.PAYMENT_COD, "accept_terms": "on",
+            "zip_code": "99999", "colonia": "Centro", "payment_method": Order.PAYMENT_COD, "accept_terms": "on",
         }
         response = self.client.post(reverse("orders:checkout"), data)
         if response.status_code != 302:
@@ -325,7 +342,7 @@ class CheckoutCityDepartmentIntegrationTests(TestCase):
             "address": "calle 49e #83a-91",
             "state": "JAL",
             "city": "Ciudad Inventada",
-            "zip_code": "99999", "payment_method": Order.PAYMENT_COD,
+            "zip_code": "99999", "colonia": "Centro", "payment_method": Order.PAYMENT_COD,
             "accept_terms": "on",
         }
         response = self.client.post(reverse("orders:checkout"), data)
@@ -402,7 +419,7 @@ class CheckoutVariantOutOfStockTests(TestCase):
             "address": "calle 49e #83a-91",
             "state": "JAL",
             "city": "Guadalajara",
-            "zip_code": "99999", "payment_method": Order.PAYMENT_COD,
+            "zip_code": "99999", "colonia": "Centro", "payment_method": Order.PAYMENT_COD,
             "accept_terms": "on",
         }
         response = self.client.post(reverse("orders:checkout"), data, follow=True)
@@ -492,7 +509,7 @@ class CheckoutWarehouseIdTests(TestCase):
             "address": "calle 49e #83a-91",
             "state": "JAL",
             "city": "Guadalajara",
-            "zip_code": "99999", "payment_method": Order.PAYMENT_COD,
+            "zip_code": "99999", "colonia": "Centro", "payment_method": Order.PAYMENT_COD,
             "accept_terms": "on",
         }
         response = self.client.post(reverse("orders:checkout"), data)
@@ -582,7 +599,7 @@ class CheckoutMultiSupplierSplitTests(TestCase):
             "address": "calle 49e #83a-91",
             "state": "JAL",
             "city": "Guadalajara",
-            "zip_code": "99999", "payment_method": Order.PAYMENT_COD,
+            "zip_code": "99999", "colonia": "Centro", "payment_method": Order.PAYMENT_COD,
             "accept_terms": "on",
         }
 
@@ -1002,7 +1019,7 @@ class CheckoutDoesNotLoseSalesTests(TestCase):
         )
         self.base = {"name": "Jose", "surname": "Rojas", "email": "", "phone": "5512345678",
                      "address": "Av. Juárez 123, col. Centro", "state": "CMX", "city": "Cuauhtémoc",
-                     "zip_code": "99999", "payment_method": Order.PAYMENT_COD}
+                     "zip_code": "99999", "colonia": "Centro", "payment_method": Order.PAYMENT_COD}
 
     def _add_to_cart(self):
         r = self.client.post(f"/carrito/agregar/{self.product.pk}/", {"quantity": 1},

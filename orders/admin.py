@@ -45,7 +45,7 @@ class OrderAdmin(admin.ModelAdmin):
             "fields": ("user", "name", "surname", "email", "phone"),
         }),
         ("Envío", {
-            "fields": ("address", "city", "state", "zip_code", "notes"),
+            "fields": ("address", "colonia", "city", "state", "zip_code", "notes"),
         }),
         ("Pedido", {
             "fields": (
@@ -201,7 +201,7 @@ class OrderAdmin(admin.ModelAdmin):
         ro = list(super().get_readonly_fields(request, obj))
         if obj:
             ro += ["name", "surname", "email", "phone",
-                   "address", "city", "state", "zip_code", "notes",
+                   "address", "colonia", "city", "state", "zip_code", "notes",
                    "payment_method", "total"]
         return ro
 
@@ -238,7 +238,8 @@ class CheckoutAttemptAdmin(admin.ModelAdmin):
     @admin.display(description="Qué falló")
     def failed_fields(self, obj):
         labels = {"name": "Nombre", "surname": "Apellido", "phone": "Teléfono", "email": "Correo",
-                  "state": "Departamento", "city": "Ciudad", "address": "Dirección", "notes": "Indicaciones",
+                  "zip_code": "Código postal", "state": "Estado", "city": "Municipio", "address": "Calle y número",
+                  "colonia": "Colonia", "notes": "Indicaciones",
                   "__all__": "General"}
         return ", ".join(labels.get(f, f) for f in (obj.errors or {})) or "—"
 

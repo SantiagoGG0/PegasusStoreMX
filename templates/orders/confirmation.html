@@ -64,7 +64,7 @@
         <div class="track-dl__row"><dt>Nombre</dt><dd>{{ order.name }} {{ order.surname }}</dd></div>
         {% if order.email %}<div class="track-dl__row"><dt>Correo</dt><dd>{{ order.email }}</dd></div>{% endif %}
         <div class="track-dl__row"><dt>Teléfono</dt><dd>{{ order.phone }}</dd></div>
-        <div class="track-dl__row"><dt>Dirección</dt><dd>{{ order.address }}, {{ order.city }}, {{ order.state }}</dd></div>
+        <div class="track-dl__row"><dt>Dirección</dt><dd>{{ order.full_address }}, {{ order.city }}, {{ order.state_label }}{% if order.zip_code %}, CP {{ order.zip_code }}{% endif %}</dd></div>
         <div class="track-dl__row"><dt>Pago</dt><dd>{{ order.get_payment_method_display }}</dd></div>
       </dl>
     </section>

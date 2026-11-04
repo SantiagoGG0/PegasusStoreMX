@@ -94,6 +94,12 @@
         <span class="checkout-field__error" data-error-for="address"{% if not form.address.errors %} hidden{% endif %}>{{ form.address.errors.0 }}</span>
       </label>
 
+      <label class="checkout-field checkout-field--full{% if form.colonia.errors %} checkout-field--invalid{% endif %}" data-field="colonia">
+        <span class="checkout-field__label">{{ form.colonia.label }}</span>
+        {{ form.colonia }}
+        <span class="checkout-field__error" data-error-for="colonia"{% if not form.colonia.errors %} hidden{% endif %}>{{ form.colonia.errors.0 }}</span>
+      </label>
+
       <label class="checkout-field checkout-field--full{% if form.notes.errors %} checkout-field--invalid{% endif %}" data-field="notes">
         <span class="checkout-field__label">{{ form.notes.label }}</span>
         {{ form.notes }}
@@ -228,7 +234,7 @@
   var inlineNote = document.getElementById('checkout-errors-inline');
   var initialLabel = label ? label.textContent : '';
   var LABELS = { name: 'Nombre', surname: 'Apellido', phone: 'Teléfono / WhatsApp', zip_code: 'Código postal',
-                 state: 'Estado', city: 'Municipio', address: 'Calle, número y colonia' };
+                 state: 'Estado', city: 'Municipio', address: 'Calle y número', colonia: 'Colonia' };
 
   var alertBox = document.getElementById('checkout-alert');
   var alertTitle = document.getElementById('checkout-alert-title');
@@ -259,7 +265,7 @@
     if (who) parts.push('Nombre: ' + who + '.');
     var where = [v('id_city') || v('city-search'), dept].filter(Boolean).join(', ');
     if (where) parts.push('Municipio: ' + where + '.');
-    if (v('id_address')) parts.push('Dirección: ' + v('id_address') + '.');
+    if (v('id_address')) parts.push('Dirección: ' + v('id_address') + (v('id_colonia') ? ', Col. ' + v('id_colonia') : '') + '.');
     if (v('id_zip_code')) parts.push('CP: ' + v('id_zip_code') + '.');
     if (v('id_phone')) parts.push('Teléfono: ' + v('id_phone') + '.');
     return parts.join(' ');
@@ -342,7 +348,8 @@
     if (!val('id_city')) errs.city = val('city-search')
       ? 'Elige tu municipio en la lista que aparece al escribir (no lo encontramos tal como está escrito).'
       : 'Escribe y elige tu municipio o alcaldía.';
-    if (!val('id_address')) errs.address = 'Escribe la calle, el número y la colonia.';
+    if (!val('id_address')) errs.address = 'Escribe la calle y el número.';
+    if (!val('id_colonia')) errs.colonia = 'Escribe tu colonia.';
     return errs;
   }
   function showSummary(errs) {
@@ -366,7 +373,7 @@
       list.appendChild(li);
     });
   }
-  ['name', 'surname', 'phone', 'zip_code', 'address'].forEach(function (n) {
+  ['name', 'surname', 'phone', 'zip_code', 'address', 'colonia'].forEach(function (n) {
     var el = document.getElementById('id_' + n);
     if (el) el.addEventListener('input', function () { setError(n, ''); hideAlertIfFixed(); });
   });
@@ -438,7 +445,7 @@
   var ZIP_URL = '{% url "cart:zip_lookup" zip_code="00000" %}';
   var SUMMARY_URL = '{% url "orders:checkout_summary" %}';
   var DRAFT_KEY = 'pgs-checkout-draft';
-  var DRAFT_FIELDS = ['id_name', 'id_surname', 'id_phone', 'id_email', 'id_zip_code', 'id_address', 'id_notes', 'id_state'];
+  var DRAFT_FIELDS = ['id_name', 'id_surname', 'id_phone', 'id_email', 'id_zip_code', 'id_address', 'id_colonia', 'id_notes', 'id_state'];
   var CSRF = document.querySelector('[name=csrfmiddlewaretoken]').value;
   var searchInput = document.getElementById('city-search');
   var hiddenCity = document.getElementById('id_city');

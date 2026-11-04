@@ -46,9 +46,10 @@ de Dropi México propia (otro token, catálogo y proveedores).
   WhatsApp +52 y correo (admin → Configuración de la tienda, o `STORE_*`).
   El aviso de privacidad pide identidad y domicilio del responsable: llenarlos
   antes de lanzar y hacer revisar los textos legales por un abogado.
-- Colonia: el formulario de Dropi México la pide en un campo aparte. Hoy va
-  dentro de "Calle, número y colonia". Confirmar en el primer pedido real si
-  la API necesita un campo propio.
+- Colonia: ya es un campo aparte en el checkout (`Order.colonia`) y se manda a
+  Dropi dentro de `dir` ("Calle 1, Col. Centro"). En el primer pedido real,
+  ver en Dropi si aparece en su campo Colonia; si la API tiene un campo
+  propio, agregarlo al payload en orders/views.py.
 - Infraestructura: base Neon nueva, app nueva en DigitalOcean (`.do/app.yaml`),
   secrets de GitHub Actions. Los workflows programados están pausados.
 - GA4, Google Ads, Merchant Center, Meta y Search Console propios de México.

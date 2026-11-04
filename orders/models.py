@@ -51,9 +51,10 @@ class Order(models.Model):
     surname = models.CharField(max_length=200, verbose_name="Apellido")
     email = models.EmailField(verbose_name="Correo electrónico")
     phone = models.CharField(max_length=30, verbose_name="Teléfono")
-    address = models.CharField(max_length=500, verbose_name="Dirección")
-    city = models.CharField(max_length=200, verbose_name="Ciudad")
-    state = models.CharField(max_length=200, verbose_name="Departamento")
+    address = models.CharField(max_length=500, verbose_name="Calle y número")
+    colonia = models.CharField(max_length=200, blank=True, verbose_name="Colonia")
+    city = models.CharField(max_length=200, verbose_name="Municipio o alcaldía")
+    state = models.CharField(max_length=200, verbose_name="Estado")
     zip_code = models.CharField(max_length=20, blank=True, verbose_name="Código postal")
     notes = models.TextField(blank=True, verbose_name="Notas del pedido")
 
@@ -107,6 +108,20 @@ class Order(models.Model):
         verbose_name = "Orden"
         verbose_name_plural = "Órdenes"
         ordering = ["-created_at"]
+
+    @property
+    def full_address(self) -> str:
+        """"Av. Juárez 123, Col. Centro": así va a Dropi y a la paquetería."""
+        if self.colonia and self.colonia.lower() not in self.address.lower():
+            return f"{self.address}, Col. {self.colonia}"
+        return self.address
+
+    @property
+    def state_label(self) -> str:
+        """"CMX" → "Ciudad de México" (se guarda el código ISO)."""
+        from cart.mexico_geo import state_label
+
+        return state_label(self.state) or self.state
 
     def __str__(self):
         return f"Orden #{self.pk} — {self.name} {self.surname}"

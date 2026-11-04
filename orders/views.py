@@ -82,7 +82,7 @@ def _checkout_shipping_experiments(cart, city: str) -> list[dict]:
 # error cortó la petición sin borrarla, el cliente no queda bloqueado viendo
 # "Tu pedido ya se está procesando" en cada intento.
 SUBMITTING_TTL_SECONDS = 90
-_ATTEMPT_DATA_FIELDS = ("name", "surname", "phone", "email", "zip_code", "state", "city", "address", "notes")
+_ATTEMPT_DATA_FIELDS = ("name", "surname", "phone", "email", "zip_code", "state", "city", "address", "colonia", "notes")
 
 
 def _record_checkout_attempt(request, stage, *, form=None, cart=None, errors=None, detail=""):
@@ -417,6 +417,7 @@ def checkout(request):
                         email=data["email"],
                         phone=data["phone"],
                         address=data["address"],
+                        colonia=data.get("colonia", ""),
                         city=data["city"],
                         state=data["state"],
                         zip_code=data.get("zip_code", ""),
@@ -457,7 +458,9 @@ def checkout(request):
                         "notes": data.get("notes", ""),
                         "name": data["name"],
                         "surname": data["surname"],
-                        "dir": data["address"],
+                        # Colonia dentro de la dirección: así la ve la
+                        # paquetería aunque la API no tenga un campo propio.
+                        "dir": order.full_address,
                         "country": "MX",
                         "state": dropi_state,
                         "city": dropi_city,
@@ -779,7 +782,7 @@ def _send_order_confirmation_email(order: Order) -> None:
         f"{items_lines}\n"
         f"{sep}\n"
         f"Total: ${float(order.total):,.0f}\n"
-        f"Envío a: {order.address}, {order.city} ({order.state})\n"
+        f"Envío a: {order.full_address}, {order.city} ({order.state_label})\n"
         f"Método de pago: {payment_label}\n\n"
         f"Recibirás tu pedido en 1 a 5 días hábiles después del despacho, según tu ciudad.\n\n"
         f"¡Gracias por tu compra!\n"

@@ -75,7 +75,7 @@ def msg_confirm_order(request, order) -> str:
     return (
         f"Hola {_first_name(order)}, te escribimos de Pegasus Store por tu pedido #{order.pk}: "
         f"{_items_line(order)}. Total {_money(order.total)}, pagas al recibir.\n"
-        f"Dirección: {order.address}, {order.city}.\n"
+        f"Dirección: {order.full_address}, {order.city}.\n"
         "¿Nos confirmas que los datos están bien y que vas a poder recibirlo? Gracias."
     )
 

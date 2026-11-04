@@ -145,9 +145,16 @@ class CheckoutForm(forms.Form):
     )
     address = forms.CharField(
         max_length=500,
-        label="Calle, número y colonia",
-        error_messages={"required": "Escribe la calle, el número y la colonia."},
-        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Av. Juárez 123, int. 4, col. Centro", "autocomplete": "street-address"}),
+        label="Calle y número",
+        error_messages={"required": "Escribe la calle y el número."},
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Av. Juárez 123, int. 4", "autocomplete": "address-line1"}),
+    )
+    # Aparte, como en el formulario de Dropi México: la paquetería la necesita.
+    colonia = forms.CharField(
+        max_length=200,
+        label="Colonia",
+        error_messages={"required": "Escribe tu colonia."},
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Centro", "autocomplete": "address-line2"}),
     )
     state = forms.ChoiceField(
         choices=COLOMBIA_DEPARTMENTS,
@@ -208,6 +215,11 @@ class CheckoutForm(forms.Form):
             f"El número tiene {len(phone)} dígitos y un celular en México tiene 10 "
             "(por ejemplo 55 1234 5678). Revísalo."
         )
+
+    def clean_colonia(self):
+        # "Col. Centro" / "colonia centro" → "Centro" (el prefijo lo pone full_address).
+        value = " ".join((self.cleaned_data.get("colonia") or "").split())
+        return re.sub(r"^(col(onia)?\.?)\s+", "", value, flags=re.IGNORECASE)
 
     def clean_zip_code(self):
         zip_code = normalize_zip(self.cleaned_data.get("zip_code", ""))
