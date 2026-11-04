@@ -463,3 +463,28 @@ class SeoUrlAndSnippetTests(SimpleTestCase):
             likely_free_shipping=False, description="ACEITE DE JENGIBRE – TERAPIA DE DRENAJE Activa tu bienestar natural.",
         )
         self.assertIn("envío a todo México. Activa tu bienestar", generate_meta_description(product))
+
+
+class MexicoCategoryTests(SimpleTestCase):
+    """Muestra real de Dropi México (2026-11-04): ~16% caía en "Otros"."""
+
+    def _key(self, name, dropi=""):
+        from catalog.services.categorization import classify_product_text
+
+        return classify_product_text(name=name, dropi_category_name=dropi).category_key
+
+    def test_dropi_mx_category_is_the_fallback(self):
+        self.assertEqual(self._key("Booms Box 3 Mini", "Tecnologia"), "tecnologia")
+        self.assertEqual(self._key("Dispositivo Ultrasónico Para Perro", "Mascotas"), "mascotas")
+        self.assertEqual(self._key("Set 3 Pz Crema Reparadora de Faros", "Vehículos"), "vehiculos")
+
+    def test_keywords_still_win_over_dropi_category(self):
+        self.assertEqual(self._key("LANCHA RC EXTREME BOAT", "Tecnologia"), "juguetes")
+        self.assertEqual(self._key("PARCHES PARA VÁRICES Y CIRCULACIÓN", "Belleza"), "salud_bienestar")
+
+    def test_beauty_patches_stay_in_beauty(self):
+        self.assertEqual(self._key("Parches reparadores de arrugas", "Belleza"), "belleza")
+
+    def test_mexican_vocabulary(self):
+        self.assertEqual(self._key("Bocina bluetooth portátil"), "tecnologia")
+        self.assertEqual(self._key("Drenaje Linfático"), "salud_bienestar")

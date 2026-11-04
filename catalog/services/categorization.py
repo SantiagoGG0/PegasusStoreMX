@@ -62,6 +62,7 @@ STORE_CATEGORIES: tuple[CategoryDefinition, ...] = (
             "gamer", "tipo c", "hdmi", "tripode", "estabilizador", "impresora",
             "antena", "tdt", "television", "digital", "wifi", "router", "modem",
             "repetidor", "control remoto", "drone", "proyector", "monitor",
+            "bocina", "bocinas", "boombox", "booms box", "audifono",
             "tablet", "portatil", "power bank", "bateria externa", "memoria usb",
             "tarjeta memoria", "speaker", "auricular", "audifono", "audifonos",
             "luz led", "recargable", "reloj inteligente", "t500",
@@ -102,6 +103,9 @@ STORE_CATEGORIES: tuple[CategoryDefinition, ...] = (
         "Salud y Bienestar",
         (
             "salud", "bienestar", "masaje", "masajeador", "ortopedico",
+            # México
+            "parche", "parches", "drenaje linfatico", "drenaje", "glp 1", "plantillas",
+            "varices", "venas", "circulacion", "hongos", "metabolico", "metabolicos", "detox",
             "postura", "faja", "terapia", "dolor", "tens", "vaporizador",
             "nebulizador", "termometro", "presion arterial", "tensiometro",
             "oximetro", "glucometro", "fisioterapia", "corrector postura",
@@ -143,6 +147,7 @@ STORE_CATEGORIES: tuple[CategoryDefinition, ...] = (
         (
             "vehiculo", "vehiculos", "carro", "moto", "automotriz", "llanta",
             "retrovisor", "soporte celular carro", "limpiaparabrisas", "auto",
+            "coche", "faros", "soporte celular auto",
             "automovil", "ambientador carro", "aspiradora carro",
             "motocicleta", "rin", "parabrisas", "cargador carro", "pulidora",
             "cera", "desengrasante", "brilladora", "renovador", "antiempanante",
@@ -268,6 +273,7 @@ STORE_CATEGORIES: tuple[CategoryDefinition, ...] = (
         "Juguetes",
         (
             "juguete", "juguetes", "didactico", "rompecabezas", "lego", "bloques",
+            "lancha rc", "carro rc", "auto rc", "lapicera 3d", "pluma 3d",
             "muneca", "carro juguete", "dinosaurio", "alcancia", "peluche",
             "cubo rubik", "juego mesa", "juego de mesa", "juegos", "cartas", "patineta infantil",
             "ajedrez", "jugueteria", "juguetería", "hidrogel", "pistola hidrogel",
@@ -285,7 +291,7 @@ _WEAK_KEYWORDS = {
     "belleza": {"cabello", "facial", "piel", "colageno", "cepillo", "jabon", "crema", "vitamina"},
     "tecnologia": {"tecnologia", "electronica", "led", "celular", "telefono", "usb", "inalambrico", "recargable"},
     "hogar": {"casa", "oficina", "decoracion", "mesa", "silla", "organizador", "dispensador", "ambientador"},
-    "salud_bienestar": {"salud", "bienestar", "dolor", "tens"},
+    "salud_bienestar": {"salud", "bienestar", "dolor", "tens", "parche", "parches"},
     "cocina": {"vaso", "termo", "alimentos", "botella", "taza", "jarra", "lonchera"},
     "vehiculos": {"moto", "carro", "vehiculo", "vehiculos"},
     "moda_accesorios": {"accesorio", "accesorios", "moda", "ropa", "bisuteria"},
@@ -354,7 +360,48 @@ def ensure_store_categories() -> list[Category]:
     return [ensure_store_category(category.key) for category in STORE_CATEGORIES]
 
 
+# Categorías de Dropi México → tienda. Solo se usan cuando las palabras clave
+# no deciden (resultado "otros"): en Dropi México vienen bien asignadas, y sin
+# esto ~16% del catálogo caía en "Otros" (muestra de 240, 2026-11-04).
+DROPI_MX_CATEGORY_FALLBACK = {
+    "hogar": "hogar", "natural home": "hogar", "aseo": "hogar",
+    "cocina": "cocina",
+    "mascotas": "mascotas",
+    "moda": "moda_accesorios", "calzado": "moda_accesorios",
+    "tecnologia": "tecnologia", "gadgets": "tecnologia",
+    "belleza": "belleza",
+    "salud": "salud_bienestar", "bienestar": "salud_bienestar", "cuidado personal": "salud_bienestar",
+    "deportes": "deporte_fitness", "camping": "deporte_fitness", "pesca": "deporte_fitness",
+    "bebe": "bebes",
+    "sex shop": "bienestar_intimo",
+    "vehiculos": "vehiculos",
+    "defensa personal": "seguridad",
+    "jugueteria": "juguetes",
+    "herramientas": "herramientas",
+}
+
+
 def classify_product_text(
+    *,
+    name: str,
+    description: str = "",
+    dropi_category_name: str = "",
+) -> CategoryResult:
+    result = _classify_by_keywords(name=name, description=description, dropi_category_name=dropi_category_name)
+    if result.category_key != "otros":
+        return result
+    key = DROPI_MX_CATEGORY_FALLBACK.get(normalize_text(dropi_category_name))
+    if not key:
+        # Varias categorías de Dropi juntas ("Salud Bienestar"): la primera que se conozca.
+        normalized = normalize_text(dropi_category_name)
+        key = next((v for k, v in DROPI_MX_CATEGORY_FALLBACK.items() if contains_normalized_term(normalized, k)), None)
+    if not key:
+        return result
+    definition = _CATEGORY_BY_KEY[key]
+    return CategoryResult(definition.key, definition.label, 50, f"categoría de Dropi: {dropi_category_name}")
+
+
+def _classify_by_keywords(
     *,
     name: str,
     description: str = "",
