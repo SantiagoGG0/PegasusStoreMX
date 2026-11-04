@@ -1,0 +1,116 @@
+{% extends "admin/change_list.html" %}
+
+
+
+{% block object-tools-items %}
+
+  <li>
+
+    <a href="{% url 'admin:catalog_explorar_dropi' %}"
+
+       class="addlink"
+
+       style="background-color: #7c3aed; padding: 8px 16px; border-radius: 4px; color: white; font-weight: bold; text-decoration: none;">
+
+      🔍 Explorar catálogo Dropi
+
+    </a>
+
+  </li>
+
+  <li>
+
+    <a href="{% url 'admin:catalog_sync_dropi' %}"
+
+       class="addlink"
+
+       style="background-color: #6b7280; padding: 8px 16px; border-radius: 4px; color: white; font-weight: bold; text-decoration: none;">
+
+      🔄 Sincronizar todo
+
+    </a>
+
+  </li>
+
+  {{ block.super }}
+
+{% endblock %}
+
+
+
+{% block content %}
+
+<!-- ── Importar por URL ─────────────────────────────────────────────── -->
+
+<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:16px 20px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+
+  <span style="font-size:20px;">🔗</span>
+
+  <div style="flex:1;min-width:260px;">
+
+    <p style="margin:0 0 4px;font-weight:700;color:#5b21b6;font-size:14px;">Importar producto desde URL de Dropi</p>
+
+    <p style="margin:0;color:#6b7280;font-size:12px;">Pega el enlace del producto en Dropi y se importará automáticamente via API.</p>
+
+  </div>
+
+  <form method="post" action="{% url 'admin:catalog_importar_url' %}" style="display:flex;gap:8px;flex:2;min-width:300px;">
+
+    {% csrf_token %}
+
+    <input
+
+      type="url"
+
+      name="dropi_url"
+
+      placeholder="https://app.dropi.co/dashboard/product-details/547521/..."
+
+      required
+
+      style="flex:1;padding:8px 12px;border:1px solid #c4b5fd;border-radius:7px;font-size:13px;outline:none;"
+
+    />
+
+    <button type="submit"
+
+      style="background:#7c3aed;color:white;border:none;padding:8px 18px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+
+      ⬇ Importar
+
+    </button>
+
+  </form>
+
+</div>
+
+<!-- ── Agregar manualmente (sin API) ───────────────────────────────── -->
+
+<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+
+  <span style="font-size:20px;">✏️</span>
+
+  <div style="flex:1;min-width:260px;">
+
+    <p style="margin:0 0 4px;font-weight:700;color:#166534;font-size:14px;">Agregar producto manualmente</p>
+
+    <p style="margin:0;color:#6b7280;font-size:12px;">Si la API de Dropi no responde, agrega el producto a mano con su ID de Dropi. Los pedidos se gestionarán igual.</p>
+
+  </div>
+
+  <a href="{% url 'admin:catalog_importar_manual' %}"
+
+     style="background:#16a34a;color:white;padding:8px 18px;border-radius:7px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;">
+
+    ➕ Agregar manualmente
+
+  </a>
+
+</div>
+
+
+
+{{ block.super }}
+
+{% endblock %}
+

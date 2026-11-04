@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Califica tu pedido #{{ order.pk }} | Pegasus Store{% endblock %}
+{% block robots_meta %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block main_class %}pg-main track-main{% endblock %}
+
+{% block content %}
+<div class="track-shell review-shell">
+  <div class="order-detail__back-row">
+    <a href="{% url 'orders:detail' order.access_token %}" class="order-detail__back">← Volver a mi pedido</a>
+  </div>
+
+  <h1 class="review-shell__title">¿Cómo te fue con tu pedido #{{ order.pk }}?</h1>
+
+  {% if can_review %}
+  <p class="review-shell__lead">Tu opinión se publica con tu nombre de pila, la inicial de tu apellido y tu ciudad ({{ author_preview }}). Ayuda a otras personas a comprar con confianza.</p>
+
+  <form method="post" class="review-form">
+    {% csrf_token %}
+    {% for row in rows %}
+    <fieldset class="review-form__item">
+      <legend class="review-form__product">
+        {% if row.product.display_main_image %}<img src="{{ row.product.display_main_image }}" alt="" width="64" height="64" loading="lazy">{% endif %}
+        <span>{{ row.product.shown_name }}</span>
+      </legend>
+      <div class="review-score" role="radiogroup" aria-label="Calificación para {{ row.product.shown_name }}">
+        {% for n in "54321" %}
+        <input type="radio" id="score_{{ row.product.pk }}_{{ n }}" name="score_{{ row.product.pk }}" value="{{ n }}"{% if row.review and row.review.score|stringformat:"d" == n %} checked{% endif %}>
+        <label for="score_{{ row.product.pk }}_{{ n }}" title="{{ n }} de 5">★</label>
+        {% endfor %}
+      </div>
+      <label class="review-form__label" for="comment_{{ row.product.pk }}">Cuéntanos qué te pareció (opcional)</label>
+      <textarea id="comment_{{ row.product.pk }}" name="comment_{{ row.product.pk }}" rows="3" maxlength="1500" class="form-input" placeholder="¿Llegó bien? ¿Es como en las fotos? ¿Lo recomiendas?">{{ row.review.comment|default:"" }}</textarea>
+      {% if row.review %}<p class="review-form__saved">✓ Ya opinaste sobre este producto. Puedes cambiar tu opinión.</p>{% endif %}
+    </fieldset>
+    {% endfor %}
+    <button type="submit" class="checkout-submit">Publicar mi opinión</button>
+  </form>
+  {% else %}
+  <p class="review-shell__lead">Podrás calificar tu compra cuando el pedido aparezca como entregado. Te enviaremos el enlace por WhatsApp o correo.</p>
+  <a href="{% url 'orders:detail' order.access_token %}" class="btn-gold-pill">Ver el estado de mi pedido</a>
+  {% endif %}
+</div>
+{% endblock %}

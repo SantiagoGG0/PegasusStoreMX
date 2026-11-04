@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Pegasus Store{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f7fafc;
+            color: #2d3748;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        .email-wrapper {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            background-color: #000000;
+            padding: 32px 40px;
+            text-align: center;
+            border-bottom: 3px solid #d4af37;
+        }
+        .logo {
+            max-width: 160px;
+            height: auto;
+            margin: 0 auto;
+        }
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            color: #d4af37;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+        .content {
+            padding: 48px 40px;
+        }
+        .greeting {
+            font-size: 24px;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 16px;
+        }
+        .message {
+            font-size: 16px;
+            color: #4a5568;
+            margin-bottom: 32px;
+            line-height: 1.7;
+        }
+        .highlight {
+            color: #d4af37;
+            font-weight: 700;
+        }
+        .info-box {
+            background-color: #f7fafc;
+            border-left: 4px solid #d4af37;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        .info-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-key {
+            font-size: 14px;
+            color: #718096;
+        }
+        .info-value {
+            font-size: 14px;
+            color: #000000;
+            font-weight: 600;
+            text-align: right;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 32px;
+            background-color: #d4af37;
+            color: #000000 !important;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border: none;
+            margin: 24px 0;
+            transition: all 0.2s;
+        }
+        .button:hover {
+            background-color: #c5a028;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 32px 0;
+        }
+        .table thead {
+            background-color: #f7fafc;
+        }
+        .table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .table td {
+            padding: 16px;
+            font-size: 14px;
+            color: #2d3748;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .table .total-row td {
+            font-weight: 700;
+            font-size: 16px;
+            color: #000000;
+            padding-top: 20px;
+        }
+        .tracking-box {
+            background-color: #fffbf0;
+            border: 2px solid #d4af37;
+            padding: 32px;
+            margin: 32px 0;
+            text-align: center;
+        }
+        .tracking-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        .tracking-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #d4af37;
+            letter-spacing: 2px;
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .tracking-carrier {
+            font-size: 14px;
+            color: #718096;
+            margin-top: 8px;
+        }
+        .alert-box {
+            padding: 20px 24px;
+            margin: 32px 0;
+            border-left: 4px solid;
+        }
+        .alert-warning {
+            background-color: #fffbeb;
+            border-color: #d4af37;
+            color: #744210;
+        }
+        .alert-success {
+            background-color: #f0fdf4;
+            border-color: #22c55e;
+            color: #14532d;
+        }
+        .alert-error {
+            background-color: #fef2f2;
+            border-color: #dc2626;
+            color: #7f1d1d;
+        }
+        .divider {
+            height: 1px;
+            background-color: #e2e8f0;
+            margin: 40px 0;
+        }
+        .footer {
+            background-color: #000000;
+            padding: 40px;
+            text-align: center;
+            color: #a0aec0;
+        }
+        .footer-brand {
+            font-size: 18px;
+            font-weight: 700;
+            color: #d4af37;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+        .footer-text {
+            font-size: 14px;
+            color: #a0aec0;
+            margin: 12px 0;
+        }
+        .footer-link {
+            color: #d4af37;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footer-legal {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #2d3748;
+        }
+        @media only screen and (max-width: 600px) {
+            .email-wrapper {
+                margin: 0;
+            }
+            .content {
+                padding: 32px 24px;
+            }
+            .header {
+                padding: 24px;
+            }
+            .greeting {
+                font-size: 20px;
+            }
+            .table th,
+            .table td {
+                padding: 8px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="header">
+            {% if logo_url %}
+            <img src="{{ logo_url }}" alt="Pegasus Store" class="logo">
+            {% else %}
+            <h1 class="logo-text">PEGASUS STORE</h1>
+            {% endif %}
+        </div>
+
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+
+        <div class="footer">
+            <div class="footer-brand">PEGASUS STORE</div>
+            
+            {% if store_whatsapp %}
+            <p class="footer-text">
+                ¿Necesitas ayuda?<br>
+                <a href="https://wa.me/{{ store_whatsapp }}" class="footer-link">WhatsApp: {{ store_whatsapp_display|default:store_whatsapp }}</a>
+            </p>
+            {% endif %}
+
+            <div class="footer-legal">
+                <p>Este correo fue enviado automáticamente. No respondas a este mensaje.</p>
+                <p style="margin-top: 8px;">© {{ year }} Pegasus Store. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

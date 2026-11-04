@@ -1,0 +1,14 @@
+{% if multi_supplier %}
+<div class="supplier-notice supplier-notice--warning" role="status">
+  <p class="supplier-notice__title">Varias guías de envío ({{ supplier_count }} bodegas)</p>
+  <p class="supplier-notice__text">Pegasus Store generará una guía por bodega. Los productos de la <strong>misma bodega</strong> viajan juntos.</p>
+</div>
+{% elif item_count >= 3 %}
+<div class="supplier-notice supplier-notice--info" role="status">
+  <p class="supplier-notice__text"><strong>{{ item_count }} productos de la misma bodega.</strong> Todos viajan juntos en una sola guía de envío.</p>
+</div>
+{% else %}
+<div class="supplier-notice supplier-notice--ok" role="status">
+  <p class="supplier-notice__text"><strong>Una sola bodega en tu carrito.</strong> Todos estos productos van en la misma guía.</p>
+</div>
+{% endif %}

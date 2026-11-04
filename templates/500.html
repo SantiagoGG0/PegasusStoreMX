@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Error del servidor | Pegasus Store{% endblock %}
+{% block extra_meta %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="error-page">
+  <p class="error-page__code">500</p>
+  <h1 class="error-page__title">Error interno del servidor</h1>
+  <p class="error-page__text">Algo salió mal. Estamos trabajando para solucionarlo.</p>
+  <div class="error-page__actions">
+    <a href="/" class="btn-gold-pill">Ir al inicio</a>
+  </div>
+</div>
+{% endblock %}

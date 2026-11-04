@@ -1,0 +1,176 @@
+{# Barra de búsqueda — Pegasus (pill, icono, sugerencias, recientes/populares). variant: "header" | "hero" #}
+{% with v=variant|default:"header" %}
+<form method="get"
+      action="{% url 'catalog:index' %}"
+      class="search-bar search-bar--{{ v }}"
+      role="search"
+      style="position:relative">
+  {% if request.GET.category %}
+  <input type="hidden" name="category" value="{{ request.GET.category }}" />
+  {% endif %}{# en /categoria/x/ request.GET.category lo inyecta catalog_category #}
+  <label class="search-bar__field">
+    <span class="sr-only">Buscar productos</span>
+    <svg class="search-bar__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+    <input type="search"
+           name="q"
+           value="{{ request.GET.q|default:'' }}"
+           placeholder="{% if v == 'hero' %}Buscar productos, marcas y más…{% else %}Buscar productos…{% endif %}"
+           autocomplete="off"
+           class="search-bar__input"
+           data-live-search="true"
+           data-suggestions-url="{% url 'catalog:search_suggestions' %}" />
+    <button type="submit" class="search-bar__submit">Buscar</button>
+  </label>
+  <div class="search-dropdown" id="search-dropdown-{{ v }}" style="display:none" aria-live="polite">
+    <div class="search-dropdown__results" id="search-dropdown-results-{{ v }}"></div>
+    <div class="search-dropdown__empty" id="search-dropdown-empty-{{ v }}">
+      <div class="search-dropdown__recent" id="search-dropdown-recent-{{ v }}" style="display:none">
+        <div class="search-dropdown__label">Tus búsquedas recientes</div>
+        <div class="search-dropdown__chips" id="search-dropdown-recent-chips-{{ v }}"></div>
+      </div>
+      {% if nav_categories %}
+      <div class="search-dropdown__label">Búsquedas populares</div>
+      <div class="search-dropdown__chips">
+        {% for cat in nav_categories|slice:":6" %}
+        <button type="button" class="search-dropdown__chip search-dropdown__chip--pop" data-pop-term="{{ cat.name }}">{{ cat.name }}</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</form>
+<script>
+(function () {
+  var form = document.currentScript.previousElementSibling;
+  if (!form) return;
+  var input = form.querySelector('[data-live-search]');
+  var dropdown = form.querySelector('.search-dropdown');
+  var resultsBox = form.querySelector('.search-dropdown__results');
+  var emptyBox = form.querySelector('.search-dropdown__empty');
+  var recentWrap = form.querySelector('.search-dropdown__recent');
+  var recentChips = form.querySelector('[id^="search-dropdown-recent-chips-"]');
+  if (!input || !dropdown) return;
+
+  var url = input.dataset.suggestionsUrl;
+  var timer;
+  var lastQ = '';
+  var RECENT_KEY = 'pegasus_recent_searches_v1';
+
+  // Nombres de proveedores y lo que escribe el usuario van al HTML: escapados.
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function formatPrice(raw) {
+    var n = parseFloat(raw);
+    if (isNaN(n)) return '';
+    return '$' + Math.round(n).toLocaleString('es-MX');
+  }
+
+  function getRecent() {
+    try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (e) { return []; }
+  }
+
+  function saveRecent(term) {
+    term = (term || '').trim();
+    if (!term) return;
+    var list = getRecent().filter(function (t) { return t.toLowerCase() !== term.toLowerCase(); });
+    list.unshift(term);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 4))); } catch (e) {}
+  }
+
+  function renderRecent() {
+    if (!recentWrap || !recentChips) return;
+    var list = getRecent();
+    if (!list.length) { recentWrap.style.display = 'none'; return; }
+    recentChips.innerHTML = list.map(function (t) {
+      return '<button type="button" class="search-dropdown__chip" data-recent-term="' + esc(t) + '">' + esc(t) + '</button>';
+    }).join('');
+    recentWrap.style.display = '';
+  }
+
+  function showResults(data) {
+    var html = data.results.map(function (r) {
+      var img = r.image
+        ? '<img class="search-dropdown__img" src="' + esc(r.image) + '" alt="" loading="lazy">'
+        : '<div class="search-dropdown__img-placeholder"></div>';
+      return '<a href="' + esc(r.url) + '" class="search-dropdown__item">' +
+        img +
+        '<span class="search-dropdown__name">' + esc(r.name) + '</span>' +
+        '<span class="search-dropdown__price">' + formatPrice(r.price) + '</span>' +
+        '</a>';
+    }).join('');
+    html += '<a href="{% url 'catalog:index' %}?q=' + encodeURIComponent(data.q) + '" class="search-dropdown__footer">Ver todos los resultados para &ldquo;' + esc(data.q) + '&rdquo; &rarr;</a>';
+    resultsBox.innerHTML = html;
+    resultsBox.style.display = 'block';
+    emptyBox.style.display = 'none';
+    dropdown.style.display = 'block';
+  }
+
+  function showEmptyState() {
+    renderRecent();
+    resultsBox.style.display = 'none';
+    resultsBox.innerHTML = '';
+    emptyBox.style.display = 'block';
+    dropdown.style.display = 'block';
+  }
+
+  function hideDropdown() {
+    dropdown.style.display = 'none';
+  }
+
+  function runSearch(term) {
+    saveRecent(term);
+    window.location = "{% url 'catalog:index' %}?q=" + encodeURIComponent(term);
+  }
+
+  input.addEventListener('focus', function () {
+    var q = input.value.trim();
+    if (q.length < 2) { showEmptyState(); return; }
+    if (resultsBox.innerHTML) { resultsBox.style.display = 'block'; emptyBox.style.display = 'none'; dropdown.style.display = 'block'; }
+  });
+
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    var q = input.value.trim();
+    if (q === lastQ) return;
+    lastQ = q;
+    if (q.length < 2) { showEmptyState(); return; }
+    timer = setTimeout(function () {
+      fetch(url + '?q=' + encodeURIComponent(q), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data.results.length) { showEmptyState(); return; }
+          showResults(data);
+        })
+        .catch(hideDropdown);
+    }, 220);
+  });
+
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { hideDropdown(); input.value = ''; }
+    if (e.key === 'Enter' && input.value.trim()) { saveRecent(input.value.trim()); }
+  });
+
+  form.addEventListener('submit', function () {
+    if (input.value.trim()) saveRecent(input.value.trim());
+    hideDropdown();
+  });
+
+  form.addEventListener('mousedown', function (e) {
+    var recentBtn = e.target.closest('[data-recent-term]');
+    var popBtn = e.target.closest('[data-pop-term]');
+    if (recentBtn) { e.preventDefault(); runSearch(recentBtn.dataset.recentTerm); }
+    else if (popBtn) { e.preventDefault(); runSearch(popBtn.dataset.popTerm); }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!form.contains(e.target)) hideDropdown();
+  });
+})();
+</script>
+{% endwith %}

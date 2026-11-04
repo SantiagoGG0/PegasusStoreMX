@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load humanize order_tags %}
+
+{% block title %}Pedido #{{ order.pk }} | Pegasus Store{% endblock %}
+{% block main_class %}pg-main track-main{% endblock %}
+
+{% block content %}
+<div class="track-shell">
+  <div class="order-detail__back-row">
+    <a href="{% url 'orders:track' %}" class="order-detail__back">← Buscar otro pedido</a>
+  </div>
+
+  <div class="track-card" data-live="card">
+    <div class="track-card__head">
+      <div>
+        <div class="track-card__eyebrow">PEDIDO</div>
+        <div class="track-card__number">#{{ order.pk }}</div>
+        <div class="track-card__meta">{{ order.created_at|date:"d M Y, H:i" }}{% if order.carrier %} · {{ order.carrier }}{% endif %}</div>
+      </div>
+      {% include "includes/order_status_badge.html" %}
+    </div>
+
+    {% if order.shipping_guide %}
+    <div class="track-card__guide">
+      <span class="track-card__guide-label">GUÍA</span>
+      <span id="guide-number" class="track-card__guide-number">{{ order.shipping_guide }}</span>
+      <button type="button" onclick="copyGuide()" class="track-card__copy" title="Copiar guía" aria-label="Copiar número de guía">
+        <span id="copy-icon">Copiar</span><span id="check-icon" class="hidden">✓ Copiado</span>
+      </button>
+    </div>
+    {% endif %}
+
+    <div class="track-card__timeline">
+      {% include "includes/order_timeline.html" with show_tracking_link=False %}
+    </div>
+
+    {% if order.tracking_url and order.tracking_url|slice:":4" == "http" %}
+    <a href="{{ order.tracking_url }}" target="_blank" rel="noopener noreferrer" class="btn-gold-pill track-card__track-btn">Rastrear envío →</a>
+    {% endif %}
+
+    {% if order.status == "ENTREGADO" %}
+    <div class="track-review">
+      <div class="track-review__text"><strong>¿Cómo te fue con tu compra?</strong> Tu opinión ayuda a otros clientes.</div>
+      <a href="{% url 'orders:review' order.access_token %}" class="btn-gold-pill">Calificar mi compra</a>
+    </div>
+    {% endif %}
+
+    <div class="track-help">
+      <div class="track-help__text">Te avisamos por WhatsApp en cada cambio de estado. ¿Necesitas cambiar la dirección?</div>
+      {% include "includes/whatsapp_button.html" with label="Escribir a soporte" extra_class="wa-btn--solid" wa_message="Hola, tengo una consulta sobre mi pedido" %}
+    </div>
+  </div>
+
+  <div class="track-grid">
+    <section class="track-panel">
+      <h2 class="track-panel__title">Productos</h2>
+      <div class="order-items-table">
+        {% for item in order.items %}
+        <div class="order-items-table__row">
+          <span>{{ item.name }}</span>
+          <span>×{{ item.quantity }}</span>
+          <span>${{ item.total|floatformat:0|intcomma }}</span>
+        </div>
+        {% endfor %}
+        {% if order.shipping_cost %}
+        <div class="order-items-table__row order-items-table__row--muted">
+          <span>Envío</span><span></span><span>${{ order.shipping_cost|floatformat:0|intcomma }}</span>
+        </div>
+        {% endif %}
+        <div class="order-items-table__row order-items-table__row--total">
+          <span>Total</span><span></span><span>${{ order.total|floatformat:0|intcomma }}</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="track-panel">
+      <h2 class="track-panel__title">Información de entrega</h2>
+      <dl class="track-dl">
+        <div class="track-dl__row"><dt>Nombre</dt><dd>{{ order.name }} {{ order.surname }}</dd></div>
+        {% if order.email %}<div class="track-dl__row"><dt>Correo</dt><dd>{{ order.email }}</dd></div>{% endif %}
+        <div class="track-dl__row"><dt>Teléfono</dt><dd>{{ order.phone }}</dd></div>
+        <div class="track-dl__row"><dt>Dirección</dt><dd>{{ order.address }}, {{ order.city }}, {{ order.state }}</dd></div>
+        <div class="track-dl__row"><dt>Pago</dt><dd>{{ order.get_payment_method_display }}</dd></div>
+      </dl>
+
+      {% if can_cancel %}
+      <div class="track-cancel" id="cancel-window" data-live="cancel" data-seconds="{{ order|cancel_seconds_remaining }}">
+        <p>¿Te arrepentiste? Puedes cancelar en <span id="cancel-timer">15:00</span> min.</p>
+        <a href="{% url 'orders:cancel' order.access_token %}">Cancelar pedido</a>
+      </div>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+
+<script>
+// Siempre definida: la guía puede aparecer al refrescar el estado sin recargar.
+function copyGuide() {
+  var el = document.getElementById('guide-number');
+  if (!el) return;
+  var guide = el.textContent.trim();
+  navigator.clipboard.writeText(guide).then(function() {
+    document.getElementById('copy-icon').classList.add('hidden');
+    document.getElementById('check-icon').classList.remove('hidden');
+    setTimeout(function() {
+      document.getElementById('copy-icon').classList.remove('hidden');
+      document.getElementById('check-icon').classList.add('hidden');
+    }, 2000);
+  });
+}
+</script>
+
+{% if can_cancel %}
+<script>
+(function () {
+  var box = document.getElementById('cancel-window');
+  if (!box) return;
+  var secs = parseInt(box.getAttribute('data-seconds') || '0', 10);
+  var el = document.getElementById('cancel-timer');
+  function tick() {
+    if (secs <= 0) { box.style.display = 'none'; return; }
+    var m = Math.floor(secs / 60);
+    var s = secs % 60;
+    el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    if (secs <= 120) box.classList.add('is-urgent');
+    secs -= 1;
+    setTimeout(tick, 1000);
+  }
+  tick();
+})();
+</script>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if order.status != 'ENTREGADO' and order.status != 'CANCELADO' %}
+<script>
+(function () {
+  var pollUrl = "{% url 'orders:order_status_api' order.access_token %}";
+  var currentStatus = "{{ order.status }}";
+  var TERMINAL = ["ENTREGADO", "CANCELADO"];
+  // Igual que en confirmation.html: al cambiar el estado se refrescan las
+  // zonas [data-live] en vez de recargar la página.
+  function refreshLive() {
+    fetch(window.location.href, { credentials: "same-origin" })
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (html) {
+        if (!html) return;
+        var doc = new DOMParser().parseFromString(html, "text/html");
+        document.querySelectorAll("[data-live]").forEach(function (el) {
+          var fresh = doc.querySelector('[data-live="' + el.getAttribute("data-live") + '"]');
+          if (fresh) el.replaceWith(fresh); else el.remove();
+        });
+      })
+      .catch(function () {});
+  }
+  var timer = setInterval(function () {
+    fetch(pollUrl, { credentials: "same-origin" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data) return;
+        if (TERMINAL.indexOf(data.status) !== -1) clearInterval(timer);
+        if (data.status !== currentStatus) { currentStatus = data.status; refreshLive(); }
+      })
+      .catch(function () {});
+  }, 15000);
+})();
+</script>
+{% endif %}
+{% endblock %}

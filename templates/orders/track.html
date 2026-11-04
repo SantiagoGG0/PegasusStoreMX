@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Sigue tu pedido | Pegasus Store{% endblock %}
+{% block meta_description %}Consulta el estado de tu pedido de Pegasus Store con tu número de pedido: guía de envío, transportadora y fecha estimada de entrega.{% endblock %}
+{% block main_class %}pg-main track-main{% endblock %}
+
+{% block content %}
+<div class="track-shell track-shell--narrow">
+  <h1 class="track-title">Sigue tu pedido</h1>
+  <p class="track-lead">Con tu número de guía o el teléfono con el que pediste.</p>
+
+  <form method="post" class="track-search">
+    {% csrf_token %}
+    <input type="text" name="guide" class="form-input track-search__input" placeholder="Nº de guía o celular con el que pediste" aria-label="Número de guía o teléfono">
+    <button type="submit" class="btn-gold-pill">Buscar</button>
+  </form>
+  {% if error %}<div class="track-search__error">{{ error }}</div>{% endif %}
+
+  <div class="track-support">
+    <div class="track-help__text">¿No encuentras tu pedido? Escríbenos y lo revisamos contigo.</div>
+    {% include "includes/whatsapp_button.html" with label="Escribir a soporte" extra_class="wa-btn--solid" wa_message="Hola, necesito ayuda para encontrar mi pedido" %}
+  </div>
+</div>
+{% endblock %}

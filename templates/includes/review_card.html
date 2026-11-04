@@ -1,0 +1,10 @@
+{# Tarjeta de reseña. review = ProductReview; show_product=True enlaza el producto (reseñas de la tienda). #}
+<article class="review-card">
+  <div class="review-card__stars" aria-label="{{ review.score }} de 5 estrellas">{% for i in "12345" %}<span class="{% if forloop.counter <= review.score %}is-on{% endif %}" aria-hidden="true">★</span>{% endfor %}</div>
+  {% if review.comment %}<p class="review-card__text">{{ review.comment|truncatechars:320 }}</p>{% endif %}
+  <div class="review-card__meta">
+    <span class="review-card__name">{{ review.display_author }}</span>{% if review.author_city %}<span> · {{ review.author_city }}</span>{% endif %}
+    {% if review.is_verified_purchase %}<span class="review-card__verified">✓ Compra verificada</span>{% endif %}
+  </div>
+  {% if show_product and review.product.slug %}<a class="review-card__product" href="{{ review.product.get_absolute_url }}">{{ review.product.shown_name }}</a>{% endif %}
+</article>

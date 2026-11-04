@@ -1,0 +1,82 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Confirmación de pedido #{{ order.pk }} — Pegasus Store{% endblock %}
+
+{% block content %}
+<div class="greeting">
+    Hola {{ order.name }}
+</div>
+
+<div class="message">
+    <span class="highlight">Recibimos tu pedido exitosamente.</span> Tu pedido <strong>#{{ order.pk }}</strong> está siendo procesado y pronto recibirás actualizaciones sobre su estado.
+</div>
+
+<div class="info-box">
+    <div class="info-label">Resumen del pedido</div>
+    <div class="info-row">
+        <span class="info-key">Número de pedido</span>
+        <span class="info-value">#{{ order.pk }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-key">Fecha</span>
+        <span class="info-value">{{ order.created_at|date:"d/m/Y" }} a las {{ order.created_at|date:"H:i" }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-key">Método de pago</span>
+        <span class="info-value">{{ payment_label }}</span>
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th style="text-align: center;">Cantidad</th>
+            <th style="text-align: right;">Precio</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in order.items %}
+        <tr>
+            <td>{{ item.name }}</td>
+            <td style="text-align: center;">{{ item.quantity }}</td>
+            <td style="text-align: right;">${{ item.price|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="2" style="text-align: right; padding-top: 16px; color: #718096;">Envío</td>
+            <td style="text-align: right; padding-top: 16px;">${{ order.shipping_cost|floatformat:0 }}</td>
+        </tr>
+        <tr class="total-row">
+            <td colspan="2" style="text-align: right;">Total</td>
+            <td style="text-align: right;">${{ order.total|floatformat:0 }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="info-box">
+    <div class="info-label">Dirección de envío</div>
+    <div style="margin-top: 12px; line-height: 1.6;">
+        <strong style="color: #000000;">{{ order.name }} {{ order.surname }}</strong><br>
+        {{ order.address }}<br>
+        {{ order.city }}, {{ order.state }}<br>
+        <span style="color: #718096;">Tel:</span> {{ order.phone }}
+    </div>
+</div>
+
+<div class="alert-box alert-warning">
+    <strong style="display: block; margin-bottom: 8px;">Ventana de cancelación</strong>
+    Tienes 15 minutos desde la creación del pedido para cancelarlo si aún no ha sido confirmado por logística.
+</div>
+
+<div class="divider"></div>
+
+<div class="message" style="text-align: center;">
+    <p style="margin: 8px 0; color: #718096;">
+        <strong>Tiempo estimado de entrega:</strong> 1 a 5 días hábiles después del despacho, según tu ciudad
+    </p>
+    <p style="margin: 8px 0; font-size: 14px; color: #a0aec0;">
+        Recibirás actualizaciones por correo electrónico
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load design_extras %}
+
+{% block title %}{{ product.shown_name }} ya no está disponible | Pegasus Store{% endblock %}
+{% block meta_description %}{{ product.shown_name }} ya no está disponible en Pegasus Store. Mira alternativas{% if product.category %} de {{ product.category }}{% endif %} con pago contra entrega en todo México.{% endblock %}
+{% block robots_meta %}<meta name="robots" content="noindex,follow">{% endblock %}
+
+{% block main_class %}pg-main pdp-main{% endblock %}
+
+{% block content %}
+<div class="pdp">
+  <nav class="pdp__breadcrumb" aria-label="Ruta de navegación">
+    <a href="{% url 'catalog:index' %}">INICIO</a><span>/</span>
+    {% if product.category %}
+      <a href="{{ product.category.dropi_id|category_url }}">{{ product.category|upper }}</a><span>/</span>
+    {% endif %}
+    <span class="pdp__breadcrumb-current">{{ product.shown_name }}</span>
+  </nav>
+
+  <div class="home-section__eyebrow" style="margin-top:18px;">· AGOTADO</div>
+  <h1 class="pdp__title">{{ product.shown_name }} ya no está disponible</h1>
+  <p class="pdp__cod-line">Este producto se agotó y no lo tenemos por ahora.{% if alternatives %} Estas alternativas sí están disponibles, con pago contra entrega.{% endif %}</p>
+
+  {% if alternatives %}
+  <section class="pdp-related">
+    <h2 class="pdp-related__title">Alternativas{% if product.category %} en {{ product.category }}{% endif %}</h2>
+    <div class="product-grid">
+      {% for p in alternatives %}
+        {% include "catalog/partials/product_card.html" with product=p %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:28px;">
+    {% if product.category %}
+    <a href="{{ product.category.dropi_id|category_url }}" class="btn-gold-pill">Ver más de {{ product.category }}</a>
+    {% endif %}
+    <a href="{% url 'catalog:index' %}?view=all" class="btn-outline-pill">Ver todo el catálogo</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+# Stock al día, todos los días, de los productos vendidos y de las fichas con
+# tráfico orgánico (unos 250), corriendo en GitHub y no en el PC. Ver
+# catalog/management/commands/sync_priority_stock.py. El recorrido completo de
+# sync_stock (~4 h) sigue siendo manual en catalog-sync.
+#
+# Minutos de Actions: ~12 s por producto y token. Con solo DROPI_TOKEN son
+# ~50 min/día (se corta a los 35 y retoma los más importantes al otro día);
+# cada token extra (DROPI_TOKEN_2, DROPI_TOKEN_3) reparte las consultas y baja
+# el tiempo a la mitad, a un tercio...
+#
+# Secrets: los mismos de catalog-sync (DATABASE_URL, DROPI_TOKEN, SECRET_KEY);
+# opcionales DROPI_TOKEN_2 y DROPI_TOKEN_3 (otras integraciones de Dropi).
+name: priority-stock
+
+on:
+  # Pausado hasta que exista la base de producción de México y sus secrets
+  # (DATABASE_URL, DROPI_TOKEN de Dropi México). Para activarlo, descomentar:
+  # schedule:
+  #   - cron: "30 11 * * *"   # 5:30 a. m. en Ciudad de México (UTC-6)
+  workflow_dispatch:
+
+concurrency:
+  group: dropi-api
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL_REQUIRED: "True"
+      DROPI_TOKEN: ${{ secrets.DROPI_TOKEN }}
+      DROPI_TOKEN_2: ${{ secrets.DROPI_TOKEN_2 }}
+      DROPI_TOKEN_3: ${{ secrets.DROPI_TOKEN_3 }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      # Solo para saltar los checks de arranque del servidor web; no hay servidor aquí.
+      DEBUG: "True"
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Stock de productos vendidos y con tráfico orgánico
+        run: python manage.py sync_priority_stock --max-minutes 35

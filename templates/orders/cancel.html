@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load order_tags %}
+
+{% block title %}Cancelar pedido | Pegasus Store{% endblock %}
+
+{% block content %}
+<div class="track-shell track-shell--narrow">
+  {% include "includes/page_header.html" with title="Cancelar pedido" subtitle="Confirma la cancelación" %}
+  <p class="cancel-page__order-no">Pedido #{{ order.pk }}</p>
+
+  {% if can_cancel %}
+  <form method="post" class="track-panel cancel-form">
+    {% csrf_token %}
+    <p class="cancel-form__text">Tienes hasta <strong>{{ cancel_deadline|date:"H:i" }}</strong> para cancelar este pedido sin costo.</p>
+    <label class="checkout-field">
+      <span class="checkout-field__label">Motivo (opcional)</span>
+      <textarea name="cancel_reason" rows="3" class="form-input" placeholder="Ej: pedí por error"></textarea>
+    </label>
+    <p class="cancel-form__warning">Esta acción no se puede deshacer.</p>
+    <div class="cancel-form__actions">
+      <button type="submit" class="btn-gold-pill">Confirmar cancelación</button>
+      <a href="{% url 'orders:confirmation' order.access_token %}" class="btn-outline-pill">Volver</a>
+    </div>
+  </form>
+  {% else %}
+  <div class="track-panel" style="text-align:center;">
+    <p class="track-panel__muted">El plazo de 15 minutos para cancelar este pedido ya expiró o el pedido ya fue procesado.</p>
+    <a href="{% url 'orders:track' %}" class="btn-gold-pill" style="margin-top:14px;">Ir a seguimiento</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

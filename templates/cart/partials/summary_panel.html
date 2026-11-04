@@ -1,0 +1,25 @@
+{% load humanize %}
+<div class="cart-summary__head">TU PEDIDO</div>
+<p class="cart-summary__highlight" id="cart-summary-highlight">
+  <strong id="cart-item-count">{{ item_count }} unidad{{ item_count|pluralize:"es" }}</strong> · listo para pagar
+</p>
+
+<div id="cart-summary-lines" class="cart-summary__lines">
+  {% for item in cart_items %}
+  <div class="cart-summary__line">
+    <span>{{ item.product.shown_name }} <span class="cart-summary__line-qty">×{{ item.quantity }}</span></span>
+    <span>${{ item.subtotal|floatformat:0|intcomma }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div id="cart-shipping-summary-wrap">
+  {% include "cart/partials/shipping_summary.html" %}
+</div>
+
+<div class="cart-summary__totals">
+  <div class="cart-summary__row">
+    <span>Subtotal</span>
+    <span id="cart-total">${{ total|floatformat:0|intcomma }}</span>
+  </div>
+</div>

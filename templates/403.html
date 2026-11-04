@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Acceso denegado | Pegasus Store{% endblock %}
+{% block extra_meta %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="error-page">
+  <p class="error-page__code">403</p>
+  <h1 class="error-page__title">Acceso denegado</h1>
+  <p class="error-page__text">No tienes permiso para ver esta página.</p>
+  <div class="error-page__actions">
+    <a href="/" class="btn-gold-pill">Ir al inicio</a>
+    <a href="javascript:history.back()" class="btn-outline-pill">Volver</a>
+  </div>
+</div>
+{% endblock %}

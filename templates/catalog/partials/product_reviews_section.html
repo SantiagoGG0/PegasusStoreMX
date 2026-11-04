@@ -1,0 +1,24 @@
+{% if published_reviews %}
+<section id="reviews" class="pdp-reviews">
+  <div class="pdp-reviews__grid">
+    <div class="pdp-reviews__summary">
+      <h2 class="pdp-related__title">Opiniones de este producto</h2>
+      <div class="pdp-reviews__score">
+        <span class="pdp-reviews__score-value">{{ product.display_rating }}</span>
+        <span class="pdp-reviews__score-of">/ 5 · {{ product.rating_count }} opinion{{ product.rating_count|pluralize:"es" }}</span>
+      </div>
+    </div>
+    <div class="reviews-grid">
+      {% for review in published_reviews %}{% include "includes/review_card.html" %}{% endfor %}
+    </div>
+  </div>
+</section>
+{% elif store_reviews %}
+<section id="reviews" class="pdp-reviews">
+  <h2 class="pdp-related__title">Lo que dicen nuestros clientes</h2>
+  <p class="pdp-reviews__store-note">Este producto aún no tiene opiniones. Estas son de otras compras en la tienda{% if store_review_summary.count %} (★ {{ store_review_summary.average }} en {{ store_review_summary.count }} opinion{{ store_review_summary.count|pluralize:"es" }}){% endif %}.</p>
+  <div class="reviews-grid">
+    {% for review in store_reviews %}{% include "includes/review_card.html" with show_product=True %}{% endfor %}
+  </div>
+</section>
+{% endif %}

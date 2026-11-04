@@ -1,0 +1,114 @@
+{% load humanize %}
+
+{% if pending_reviews or my_reviews %}
+<section id="mis-resenas" class="account-section">
+  <div class="account-section__head">
+    <h2 class="account-section__title">Reseñas</h2>
+  </div>
+
+  {# --- Pendientes de reseñar --- #}
+  {% if pending_reviews %}
+  <div class="account-reviews-group">
+    <p class="account-reviews-group__label">Pendientes de reseñar</p>
+    <div>
+      {% for product in pending_reviews %}
+      <div class="account-review-card">
+        <div class="account-review-card__head">
+          {% if product.image %}
+          <a href="{{ product.get_absolute_url }}" class="shrink-0">
+            <img src="{{ product.image.url }}" alt="{{ product.shown_name }}" class="account-review-card__thumb">
+          </a>
+          {% endif %}
+          <div class="min-w-0">
+            <a href="{{ product.get_absolute_url }}" class="account-review-card__name">{{ product.shown_name }}</a>
+            <p class="account-review-card__price">${{ product.price|floatformat:0|intcomma }}</p>
+          </div>
+        </div>
+
+        <form method="post" action="{% url 'catalog:submit_review' product.slug %}">
+          {% csrf_token %}
+          <input type="hidden" name="_next" value="dashboard">
+
+          {# Star picker #}
+          <div class="review-score" role="radiogroup" aria-label="Puntuación">
+            {% for i in "12345" %}
+            <label class="cursor-pointer select-none">
+              <input type="radio" name="score" value="{{ i }}"
+                     class="sr-only review-score-input"
+                     {% if forloop.last %}required{% endif %}>
+              <span class="review-star">☆</span>
+            </label>
+            {% endfor %}
+          </div>
+
+          <textarea name="comment" rows="2" maxlength="2000"
+                    placeholder="Cuéntanos qué te pareció el producto… (opcional)"
+                    class="form-input account-review-card__note"></textarea>
+
+          <button type="submit" class="btn-gold-pill">Publicar reseña</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# --- Mis reseñas publicadas --- #}
+  {% if my_reviews %}
+  <div class="account-reviews-group">
+    <p class="account-reviews-group__label">Mis reseñas</p>
+    <div class="account-reviews-list">
+      {% for review in my_reviews %}
+      <article class="account-review-card account-review">
+        {% if review.product.image %}
+        <a href="{{ review.product.get_absolute_url }}" class="shrink-0">
+          <img src="{{ review.product.image.url }}" alt="{{ review.product.shown_name }}" class="account-review__thumb">
+        </a>
+        {% endif %}
+        <div class="account-review__body">
+          <a href="{{ review.product.get_absolute_url }}#reviews" class="account-review__name">{{ review.product.shown_name }}</a>
+          <div class="account-review__stars" aria-label="{{ review.score }} de 5 estrellas">
+            {% for i in "12345" %}
+            <span class="account-review__star{% if forloop.counter <= review.score %} account-review__star--on{% endif %}">★</span>
+            {% endfor %}
+          </div>
+          {% if review.comment %}
+          <p class="account-review__text">{{ review.comment }}</p>
+          {% endif %}
+          <div class="account-review__meta">
+            <span>{{ review.created_at|date:"d M Y" }}</span>
+            <a href="{{ review.product.get_absolute_url }}#reviews" class="account-review__edit">Editar</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</section>
+{% endif %}
+
+<script>
+(function () {
+  document.querySelectorAll('#mis-resenas form').forEach(function (form) {
+    var labels = form.querySelectorAll('label');
+    function paint(uptoIdx) {
+      labels.forEach(function (l, i) {
+        var star = l.querySelector('.review-star');
+        if (star) star.classList.toggle('is-filled', i <= uptoIdx);
+      });
+    }
+    labels.forEach(function (lbl, idx) {
+      var input = lbl.querySelector('input[type="radio"]');
+      if (!input) return;
+      lbl.addEventListener('mouseenter', function () { paint(idx); });
+      input.addEventListener('change', function () { paint(idx); });
+    });
+    form.addEventListener('mouseleave', function () {
+      var checked = form.querySelector('input[name="score"]:checked');
+      paint(checked ? parseInt(checked.value, 10) - 1 : -1);
+    });
+  });
+}());
+</script>

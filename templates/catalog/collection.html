@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load design_extras %}
+
+{% block title %}{{ seo_title }}{% endblock %}
+{% block meta_description %}{{ seo_description }}{% endblock %}
+{% block canonical_url %}{{ seo_canonical }}{% endblock %}
+{% block og_title %}{{ seo_title }}{% endblock %}
+{% block og_description %}{{ seo_description }}{% endblock %}
+{% block og_url %}{{ seo_canonical }}{% endblock %}
+{% block robots_meta %}{% if seo_noindex %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
+{% block json_ld %}<script type="application/ld+json">{{ seo_json_ld }}</script>{% endblock %}
+
+{% block content %}
+<div class="collection-page">
+  <nav class="pdp__breadcrumb collection-page__crumbs" aria-label="Ruta de navegación">
+    <a href="{% url 'catalog:index' %}">Inicio</a><span>/</span>
+    <a href="{{ category.dropi_id|category_url }}">{{ category.name }}</a><span>/</span>
+    <span class="pdp__breadcrumb-current">{{ collection.name }}</span>
+  </nav>
+
+  <header class="collection-page__head">
+    <h1 class="catalog-heading__title">{{ collection.name }}{% if page_obj.number > 1 %} <span class="collection-page__pagenum">· página {{ page_obj.number }}</span>{% endif %}</h1>
+    <div class="catalog-heading__count">{{ page_obj.paginator.count }} productos · todos con pago contra entrega</div>
+    {% if page_obj.number == 1 %}{% for p in intro_lead %}<p class="collection-page__lead">{{ p }}</p>{% endfor %}{% endif %}
+  </header>
+
+  {% if siblings %}
+  <nav class="collection-page__siblings" aria-label="Más tipos de {{ category.name }}">
+    {% for s in siblings %}<a href="{{ s.get_absolute_url }}" class="cat-pill">{{ s.name }}</a>{% endfor %}
+  </nav>
+  {% endif %}
+
+  {% if page_obj.object_list %}
+  <div class="product-grid">
+    {% for product in page_obj %}
+      {% include "catalog/partials/product_card.html" with card_index=forloop.counter %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="catalog-empty">
+    <div class="catalog-empty__title">Estamos reponiendo estos productos. Escríbenos y te avisamos cuando lleguen.</div>
+    <div class="catalog-empty__actions">
+      <a href="{{ category.dropi_id|category_url }}" class="btn-gold-pill">Ver {{ category.name }}</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if prev_url or next_url %}
+  <nav class="catalog-pager" aria-label="Páginas de {{ collection.name }}">
+    {% if prev_url %}<a href="{{ prev_url }}" rel="prev">← Página anterior</a>{% endif %}
+    <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if next_url %}<a href="{{ next_url }}" rel="next">Página siguiente →</a>{% endif %}
+  </nav>
+  {% endif %}
+
+  {% if page_obj.number == 1 and intro_more or faq %}
+  <section class="collection-page__guide" aria-labelledby="collection-guide-title">
+    <h2 id="collection-guide-title" class="collection-page__h2">Cómo elegir {{ collection.name|lower }}</h2>
+    {% for p in intro_more %}<p>{{ p }}</p>{% endfor %}
+
+    {% if faq %}
+    <h2 class="collection-page__h2">Preguntas frecuentes</h2>
+    <div class="accordion" data-accordion-group="collection-faq">
+      {% for item in faq %}
+      <div class="accordion__item faq-item">
+        <button type="button" class="accordion__trigger faq-item__trigger" data-accordion-trigger aria-expanded="false">
+          <span>{{ item.q }}</span><span class="faq-item__sign">+</span>
+        </button>
+        <div class="accordion__panel faq-item__panel" hidden>{{ item.a }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <p class="collection-page__help">¿No sabes cuál elegir? <a href="https://wa.me/{{ store.whatsapp }}?text={{ 'Hola, necesito ayuda para elegir en '|add:collection.name|urlencode }}" target="_blank" rel="noopener">Escríbenos por WhatsApp</a> y te recomendamos según tu espacio y presupuesto.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

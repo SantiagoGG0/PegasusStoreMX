@@ -1,0 +1,116 @@
+{% load humanize design_extras l10n %}
+
+{% if product.slug %}
+{% with is_priority=card_index|default:99 %}
+<div class="product-card">
+
+  <div class="product-card__media-wrap">
+    <a href="{% url 'catalog:detail' product.slug %}" class="product-card__media-link">
+      <div class="product-card__carousel" data-carousel>
+        <div class="product-card__track" data-carousel-track>
+          {% comment %} Solo la primera foto se descarga con la página; las demás (data-src)
+             las carga product-card-carousel.js al pasar el carrusel. Con las
+             galerías completas, cargarlas todas llevaba una categoría a ~2 MB. {% endcomment %}
+          {% with custom_imgs=product.custom_images.all %}
+          {% if custom_imgs %}
+            {% for ci in custom_imgs|slice:":5" %}
+              {% if forloop.first %}
+              <img src="{{ ci.image.url|resize_img:"420x420" }}" alt="{{ product.shown_name }}" class="product-card__slide" loading="{% if is_priority == 1 %}eager{% else %}lazy{% endif %}" decoding="async" {% if is_priority == 1 %}fetchpriority="high"{% endif %} />
+              {% else %}
+              <img data-src="{{ ci.image.url|resize_img:"420x420" }}" alt="" class="product-card__slide" decoding="async" />
+              {% endif %}
+            {% endfor %}
+          {% elif product.images %}
+            {% for image in product.images|slice:":5" %}
+              {% with src=image|image_src %}
+              {% if src %}
+                {% if forloop.first %}
+                <img src="{{ src|resize_img:"420x420" }}" alt="{{ product.shown_name }}" class="product-card__slide" loading="{% if is_priority == 1 %}eager{% else %}lazy{% endif %}" decoding="async" {% if is_priority == 1 %}fetchpriority="high"{% endif %} />
+                {% else %}
+                <img data-src="{{ src|resize_img:"420x420" }}" alt="" class="product-card__slide" decoding="async" />
+                {% endif %}
+              {% endif %}
+              {% endwith %}
+            {% endfor %}
+          {% elif product.main_image %}
+            <img src="{{ product.main_image|resize_img:"420x420" }}" alt="{{ product.shown_name }}" class="product-card__slide" loading="{% if is_priority == 1 %}eager{% else %}lazy{% endif %}" decoding="async" {% if is_priority == 1 %}fetchpriority="high"{% endif %} />
+          {% elif product.category.image %}
+            <img src="{{ product.category.image.url|resize_img:"420x420" }}" alt="{{ product.category.name }}" class="product-card__slide product-card__slide--tinted" loading="{% if is_priority == 1 %}eager{% else %}lazy{% endif %}" decoding="async" />
+          {% else %}
+            <div class="product-card__slide product-card__slide--empty">
+              <span aria-hidden="true">foto producto</span>
+            </div>
+          {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+    </a>
+
+    {% with custom_imgs=product.custom_images.all %}
+    {% with slide_imgs=custom_imgs|default:product.images|slice:":5" %}
+    {% if slide_imgs and slide_imgs|length > 1 %}
+      <button type="button" class="product-card__nav product-card__nav--prev" data-carousel-nav="prev" aria-label="Imagen anterior">
+        &#10094;
+      </button>
+      <button type="button" class="product-card__nav product-card__nav--next" data-carousel-nav="next" aria-label="Imagen siguiente">
+        &#10095;
+      </button>
+      <div class="product-card__dots" aria-hidden="true">
+        {% for img in slide_imgs %}
+          <button type="button" tabindex="-1" class="product-card__dot{% if forloop.first %} is-active{% endif %}" data-carousel-dot="{{ forloop.counter0 }}"></button>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% endwith %}
+    {% endwith %}
+
+    <div class="product-card__badges">
+      {% if product.likely_free_shipping %}
+        <span class="product-card__badge product-card__badge--free">Envío gratis</span>
+      {% endif %}
+      {% if product.stock > 0 and product.stock <= 10 %}
+        <span class="product-card__badge product-card__badge--urgency">¡Solo quedan {{ product.stock }}!</span>
+      {% elif product.stock == 0 %}
+        <span class="product-card__badge product-card__badge--out">Agotado</span>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <div class="product-card__body">
+
+    <span class="product-card__cat">{{ product.category.name|default:"" }}</span>
+
+    <a href="{% url 'catalog:detail' product.slug %}" class="product-card__name">
+      {{ product.shown_name }}
+    </a>
+
+    {% include "catalog/partials/product_stars.html" %}
+
+    <div class="product-card__cta-row">
+      <div>
+        <p class="product-card__price">${{ product.price|floatformat:0|intcomma }} <span class="product-card__price-cop">MXN</span></p>
+        <p class="product-card__price-note">Pagas al recibir</p>
+      </div>
+      {% if product.stock > 0 %}
+      <button type="button"
+              class="quick-add-btn product-card__quick-add"
+              data-product-id="{{ product.pk }}"
+              data-variants="{{ product.card_variants_json }}"
+              data-name="{{ product.shown_name }}"
+              data-category="{{ product.category.name|default:'' }}"
+              data-price="{{ product.price|unlocalize }}"
+              aria-label="Añadir {{ product.shown_name }} al carrito"
+              title="Añadir al carrito">
+        Agregar
+      </button>
+      {% else %}
+      <span class="product-card__sold-out">Agotado</span>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+{% endwith %}
+{% endif %}

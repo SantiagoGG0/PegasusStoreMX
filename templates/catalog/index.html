@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load design_extras %}
+
+{% block title %}{{ seo_title }}{% endblock %}
+{% block meta_description %}{{ seo_description }}{% endblock %}
+{% block canonical_url %}{{ seo_canonical }}{% endblock %}
+{% block og_title %}{{ seo_title }}{% endblock %}
+{% block og_description %}{{ seo_description }}{% endblock %}
+{% block og_url %}{{ seo_canonical }}{% endblock %}
+{% block robots_meta %}{% if seo_noindex %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
+
+{% block json_ld %}
+{% if seo_json_ld %}<script type="application/ld+json">{{ seo_json_ld }}</script>{% endif %}
+{% endblock %}
+
+{% block main_class %}{% endblock %}
+
+{% block content %}
+{% if is_home %}
+  {% for section in home_sections %}
+    {% include section.template with section=section only %}
+  {% endfor %}
+{% else %}
+<div id="catalog-page">
+  {% for section in home_sections %}
+    {% if section.id == "catalog_header" %}{% include section.template with section=section only %}{% endif %}
+  {% endfor %}
+
+  {% for section in home_sections %}
+    {% if section.id == "catalog_grid" %}
+    <div class="catalog-shell">
+      <aside class="catalog-sidebar">
+        <div class="sheet__section-label">CATEGORÍAS</div>
+        <div class="catalog-sidebar__cats">
+          <a href="{% url 'catalog:index' %}?view=all" class="catalog-sidebar__cat{% if not section.context.selected_category %} is-active{% endif %}">
+            <span>Todos</span>
+          </a>
+          {% for cat in section.context.categories %}
+          <a href="{{ cat.dropi_id|category_url }}" class="catalog-sidebar__cat{% if section.context.selected_category == cat.dropi_id %} is-active{% endif %}">
+            <span>{{ cat.name }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        <div class="sheet__section-label">FILTROS RÁPIDOS</div>
+        <div class="sheet__chips">
+          <button type="button" class="cat-pill{% if section.context.active_filters.envio %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('envio', '1')">Envío gratis</button>
+          <button type="button" class="cat-pill{% if section.context.active_filters.rating %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('rating', '45')">★ 4,5 o más</button>
+          <button type="button" class="cat-pill{% if section.context.active_filters.precio == "a" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'a')">Hasta $50.000</button>
+          <button type="button" class="cat-pill{% if section.context.active_filters.precio == "c" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'c')">Más de $100.000</button>
+        </div>
+        <div class="catalog-sidebar__cod">
+          <div class="catalog-sidebar__cod-title">Todo con pago contra entrega</div>
+          <div class="catalog-sidebar__cod-text">Revisas el paquete con el repartidor antes de pagar.</div>
+        </div>
+      </aside>
+      <section class="catalog-content">
+        {% include section.template with section=section only %}
+      </section>
+    </div>
+    {% endif %}
+  {% endfor %}
+
+  <div id="sheet-filters" class="sheet" data-sheet hidden>
+    <div class="sheet__handle"></div>
+    <div class="sheet__title">Filtrar productos</div>
+    {% for section in home_sections %}{% if section.id == "catalog_grid" %}
+    <div class="sheet__section-label">CATEGORÍA</div>
+    <div class="sheet__chips">
+      <a href="{% url 'catalog:index' %}?view=all" class="cat-pill{% if not section.context.selected_category %} is-active{% endif %}">Todos</a>
+      {% for cat in section.context.categories %}
+      <a href="{{ cat.dropi_id|category_url }}" class="cat-pill{% if section.context.selected_category == cat.dropi_id %} is-active{% endif %}">{{ cat.name }}</a>
+      {% endfor %}
+    </div>
+    <div class="sheet__section-label">FILTROS RÁPIDOS</div>
+    <div class="sheet__chips">
+      <button type="button" class="cat-pill{% if section.context.active_filters.envio %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('envio', '1')">Envío gratis</button>
+      <button type="button" class="cat-pill{% if section.context.active_filters.rating %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('rating', '45')">★ 4,5 o más</button>
+      <button type="button" class="cat-pill{% if section.context.active_filters.precio == "a" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'a')">Hasta $50.000</button>
+      <button type="button" class="cat-pill{% if section.context.active_filters.precio == "c" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'c')">Más de $100.000</button>
+    </div>
+    {% endif %}{% endfor %}
+    <button type="button" class="sheet__cta" data-sheet-close>Ver productos</button>
+  </div>
+
+  <div id="sheet-sort" class="sheet" data-sheet hidden>
+    <div class="sheet__handle"></div>
+    <div class="sheet__title">Ordenar por</div>
+    <div class="sort-sheet__list">
+      <button type="button" class="sort-sheet__opt" onclick="window.applyCatalogSort && window.applyCatalogSort('featured')">Relevancia</button>
+      <button type="button" class="sort-sheet__opt" onclick="window.applyCatalogSort && window.applyCatalogSort('price_asc')">Precio: menor a mayor</button>
+      <button type="button" class="sort-sheet__opt" onclick="window.applyCatalogSort && window.applyCatalogSort('price_desc')">Precio: mayor a menor</button>
+      <button type="button" class="sort-sheet__opt" onclick="window.applyCatalogSort && window.applyCatalogSort('rating')">Mejor calificados</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

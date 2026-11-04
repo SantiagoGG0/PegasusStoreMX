@@ -1,0 +1,18 @@
+{% with ctx=section.context %}
+{% if ctx.featured_products %}
+<section class="home-section" id="mas-pedidos" aria-labelledby="mas-pedidos-title">
+  <div class="home-section__head">
+    <div>
+      <div class="home-section__eyebrow">Lo más pedido</div>
+      <h2 class="home-section__title" id="mas-pedidos-title">Lo que más se llevan nuestros clientes</h2>
+    </div>
+    <a href="{% url 'catalog:index' %}?view=all" class="home-section__all">Ver todo →</a>
+  </div>
+  <div class="product-grid product-grid--home">
+    {% for product in ctx.featured_products %}
+      {% include "catalog/partials/product_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endwith %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load humanize static %}
+
+{% block title %}Tu carrito | Pegasus Store{% endblock %}
+{% block main_class %}pg-main cart-main{% endblock %}
+
+{% block content %}
+<div class="cart-page-shell">
+  <h1 class="cart-page-title">Tu carrito</h1>
+  <div id="cart-content"
+       data-fragment-url="{% url 'cart:content_fragment' %}"
+       data-cart-page-js="{% static 'js/cart-page.js' %}?v=12"
+       data-cart-suggested-js="{% static 'js/cart-suggested-load-more.js' %}?v=3">
+    {% include "cart/partials/cart_body.html" %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/cart-empty-refresh.js' %}?v=3"></script>
+{% if cart_items %}
+<script src="{% static 'js/cart-page.js' %}?v=12"></script>
+{% if suggested_products %}
+<script src="{% static 'js/cart-suggested-load-more.js' %}?v=3"></script>
+{% endif %}
+{% elif suggested_products %}
+<script src="{% static 'js/cart-suggested-load-more.js' %}?v=3"></script>
+{% endif %}
+{% endblock %}

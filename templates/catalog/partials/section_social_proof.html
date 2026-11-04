@@ -1,0 +1,29 @@
+{% with ctx=section.context %}
+<section class="social-proof" aria-labelledby="social-proof-title">
+  <div class="social-proof__head">
+    <div class="home-section__eyebrow">Clientes reales</div>
+    <h2 class="home-section__title" id="social-proof-title">{% if ctx.reviews %}Lo que dicen quienes ya compraron{% else %}Pedidos que ya van en camino{% endif %}</h2>
+    {% if ctx.review_summary.count %}<p class="social-proof__summary">★ {{ ctx.review_summary.average }} de 5 · {{ ctx.review_summary.count }} opinion{{ ctx.review_summary.count|pluralize:"es" }} de compras verificadas</p>{% endif %}
+  </div>
+
+  {% if ctx.reviews %}
+  <div class="reviews-grid">
+    {% for review in ctx.reviews %}{% include "includes/review_card.html" with show_product=True %}{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if ctx.guides %}
+  <div class="trust-guides">
+    {% for g in ctx.guides %}
+    <div class="trust-guide">
+      <div class="trust-guide__row"><span>{{ g.carrier|default:"Guía" }}</span><span class="trust-guide__status{% if g.delivered %} is-delivered{% endif %}">{{ g.status }}</span></div>
+      <div class="trust-guide__number">{{ g.number }}</div>
+      <div class="trust-guide__route">{% if g.city %}Destino: {{ g.city }} · {% endif %}{{ g.date|date:"j M" }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <a href="{% url 'pages:trust' %}" class="social-proof__more">Ver más guías y opiniones →</a>
+</section>
+{% endwith %}

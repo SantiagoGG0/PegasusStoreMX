@@ -1,0 +1,11 @@
+{% if shipping_groups %}
+<div class="cart-shipping-summary">
+  <p class="cart-shipping-summary__title">Costo de envío por bodega</p>
+  {% for group in shipping_groups %}
+  <div class="cart-summary__row cart-summary__row--shipping">
+    <span>{{ group.supplier_label }} <span class="cart-summary__line-qty">· {{ group.item_count }} producto{{ group.item_count|pluralize }}</span></span>
+    <span>{{ group.shipping_cost_label }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

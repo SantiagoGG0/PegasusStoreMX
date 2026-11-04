@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Página no encontrada | Pegasus Store{% endblock %}
+{% block extra_meta %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block content %}
+<div class="error-page">
+  <p class="error-page__code">404</p>
+  <h1 class="error-page__title">Página no encontrada</h1>
+  <p class="error-page__text">El enlace puede estar roto o la página fue eliminada.</p>
+  <div class="error-page__actions">
+    <a href="/" class="btn-gold-pill">Ver productos</a>
+    <a href="javascript:history.back()" class="btn-outline-pill">Volver</a>
+  </div>
+</div>
+{% endblock %}

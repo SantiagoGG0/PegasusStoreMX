@@ -1,0 +1,27 @@
+django>=5.2,<6
+python-decouple>=3.8
+requests>=2.32
+pillow>=10.0
+
+# Gemini (Google AI) — generación de imágenes de producto
+google-genai>=0.3.0
+
+# Static files (production)
+whitenoise>=6.7
+
+# Database
+psycopg2-binary>=2.9
+dj-database-url>=2.0
+
+# Media storage (S3/DO Spaces — enable via USE_S3=True in .env)
+django-storages[s3]>=1.14
+
+# Media storage (Cloudinary free tier — enable via USE_CLOUDINARY=True in .env)
+cloudinary>=1.40
+django-cloudinary-storage>=0.3
+
+# Rate limiting
+django-ratelimit>=4.1
+
+# WSGI server (production)
+gunicorn>=21.0

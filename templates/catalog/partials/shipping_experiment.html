@@ -1,0 +1,26 @@
+{% load humanize %}
+{% if shipping_experiment %}
+<div class="shipping-experiment">
+  <p class="shipping-experiment__amount">
+    Envío a {{ shipping_experiment.city }}: <strong>${{ shipping_experiment.amount|floatformat:0|intcomma }}</strong>
+    &mdash; {{ shipping_experiment.reason_short }}
+  </p>
+  <details class="shipping-experiment__why">
+    <summary>¿Por qué?</summary>
+    <p>{{ shipping_experiment.reason_long }}</p>
+  </details>
+  {% if shipping_experiment.combo_candidates %}
+  <div class="shipping-experiment__combo">
+    <p class="shipping-experiment__combo-title">O lleva un combo y diluye el envío entre dos productos:</p>
+    <ul class="shipping-experiment__combo-list">
+      {% for c in shipping_experiment.combo_candidates %}
+      <li>
+        <a href="{{ c.get_absolute_url }}">{{ c.shown_name }}</a>
+        <span class="shipping-experiment__combo-price">${{ c.price|floatformat:0|intcomma }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+{% endif %}

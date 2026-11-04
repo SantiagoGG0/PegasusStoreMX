@@ -1,0 +1,32 @@
+{% load static %}
+{% with ctx=section.context %}
+{% if ctx.page_obj.object_list %}
+<div id="product-grid" class="product-grid">
+  {% for product in ctx.page_obj %}
+    {% include "catalog/partials/product_card.html" with card_index=forloop.counter %}
+  {% endfor %}
+</div>
+
+<div id="catalog-load-more-wrap"
+     class="catalog-load-more{% if not ctx.page_obj.has_next %} hidden{% endif %}"
+     data-fragment-url="{% url 'catalog:products_fragment' %}"
+     data-has-next="{{ ctx.page_obj.has_next|yesno:'true,false' }}"
+     data-next-page="{% if ctx.page_obj.has_next %}{{ ctx.page_obj.next_page_number }}{% else %}2{% endif %}"
+     data-stable="{{ ctx.stable_order|yesno:'1,0' }}"
+     data-category="{{ ctx.selected_category|default:'' }}">
+  <p id="catalog-load-more-status" class="catalog-load-more__status"></p>
+  <span id="catalog-load-spinner" class="catalog-load-more__spinner hidden" aria-hidden="true"></span>
+</div>
+
+{% if ctx.prev_url or ctx.next_url %}
+<nav class="catalog-pager" aria-label="Páginas del catálogo">
+  {% if ctx.prev_url %}<a href="{{ ctx.prev_url }}" rel="prev">← Página anterior</a>{% endif %}
+  <span>Página {{ ctx.page_obj.number }} de {{ ctx.page_obj.paginator.num_pages }}</span>
+  {% if ctx.next_url %}<a href="{{ ctx.next_url }}" rel="next">Página siguiente →</a>{% endif %}
+</nav>
+{% endif %}
+
+<script defer src="{% static 'js/catalog-load-more.js' %}?v=8"></script>
+<script defer src="{% static 'js/catalog-live-filters.js' %}?v=4"></script>
+{% endif %}
+{% endwith %}

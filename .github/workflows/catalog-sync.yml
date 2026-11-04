@@ -1,0 +1,56 @@
+# Sincronización del catálogo con Dropi contra la base de producción — SOLO
+# manual. La corrida programada vive en scripts/sync_catalog.ps1 (Programador
+# de tareas de Windows): Dropi entrega 40 productos por página y aguanta ~6
+# requests/min, así que un recorrido de stock tarda ~4 h y no cabe en los
+# 2.000 min/mes gratis de Actions para un repo privado.
+#
+# Secrets requeridos (GitHub → Settings → Secrets and variables → Actions):
+#   DATABASE_URL  — la misma URL de Postgres que usa la App en DigitalOcean
+#   DROPI_TOKEN   — token de integración de Dropi
+#   SECRET_KEY    — cualquier valor; los comandos no lo usan
+#
+# Dropi limita los requests por minuto, así que los jobs comparten un grupo
+# de concurrencia y nunca corren a la vez.
+name: catalog-sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Qué correr"
+        type: choice
+        options: [stock, galleries]
+        default: stock
+
+concurrency:
+  group: dropi-api
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL_REQUIRED: "True"
+      DROPI_TOKEN: ${{ secrets.DROPI_TOKEN }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      # Solo para saltar los checks de arranque del servidor web (email,
+      # webhook); no hay servidor en este job.
+      DEBUG: "True"
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Stock, costo y precio sugerido
+        if: inputs.task == 'stock'
+        run: python manage.py sync_stock --deactivate-zero --reactivate
+
+      - name: Galerías completas (tanda de ~5 horas, retoma donde quedó)
+        if: inputs.task == 'galleries'
+        run: python manage.py sync_galleries --reactivate --max-minutes 300 --stale-days 30

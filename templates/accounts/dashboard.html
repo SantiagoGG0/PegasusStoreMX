@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Mi cuenta | Pegasus Store{% endblock %}
+
+{% block content %}
+<div class="account-shell account-shell--wide">
+  <div class="account-header">
+    <div class="account-header__id">
+      <form method="post" action="{% url 'accounts:update_avatar' %}" enctype="multipart/form-data" id="avatar-form">
+        {% csrf_token %}
+        {{ avatar_form.avatar }}
+        <label for="avatar-input" class="account-avatar" title="Cambiar foto de perfil">
+          {% if profile.avatar %}
+          <img src="{{ profile.avatar.url }}" alt="Foto de perfil" class="account-avatar__img">
+          {% else %}
+          <div class="account-avatar__fallback">{{ user_display_name|slice:":1"|upper }}</div>
+          {% endif %}
+          <span class="account-avatar__edit" aria-hidden="true">✏️</span>
+        </label>
+      </form>
+
+      <div>
+        <h1 class="page-header__title">Hola, {{ user_display_name }}</h1>
+        <div class="gold-bar" aria-hidden="true"></div>
+        <p class="page-header__subtitle">{{ user.email }}</p>
+      </div>
+    </div>
+
+    <div class="account-header__actions">
+      <a href="{% url 'accounts:my_reviews' %}" class="btn-dark-pill">Mis reseñas</a>
+      <a href="{% url 'orders:my_orders' %}" class="btn-dark-pill">Mis pedidos</a>
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-dark-pill btn-dark-pill--danger">Cerrar sesión</button>
+      </form>
+    </div>
+  </div>
+
+  {% if cart_count > 0 %}
+  <section class="account-card account-cart-banner">
+    <div>
+      <h2 class="account-section__title">Tu carrito</h2>
+      <p class="account-cart-banner__total">
+        {{ cart_count }} producto{{ cart_count|pluralize }} · Total <strong>${{ cart_total|floatformat:0|intcomma }}</strong>
+      </p>
+    </div>
+    <div class="account-cart-banner__actions">
+      <a href="{% url 'cart:detail' %}" class="btn-dark-pill">Ver carrito</a>
+      <a href="{% url 'orders:checkout' %}" class="btn-gold-pill">Finalizar compra</a>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="account-section">
+    <div class="account-section__head">
+      <h2 class="account-section__title">Últimos pedidos</h2>
+      <p class="account-section__sub">Estado y detalle de tus compras recientes</p>
+    </div>
+
+    {% if orders %}
+    <div class="account-orders">
+      {% for order in orders %}
+      <article class="account-order">
+        <div>
+          <a href="{% url 'orders:detail' order.access_token %}" class="account-order__id">Pedido #{{ order.pk }}</a>
+          <div class="account-order__date">{{ order.created_at|date:"d M Y, H:i" }}</div>
+          {% if order.shipping_guide %}
+          <div class="account-order__guide">
+            Guía: {{ order.shipping_guide }}
+            {% if order.tracking_url and order.tracking_url|slice:":4" == "http" %}
+            · <a href="{{ order.tracking_url }}" target="_blank" rel="noopener noreferrer">Rastrear</a>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="account-order__side">
+          <span class="account-order__total">${{ order.total|floatformat:0|intcomma }}</span>
+          {% include "includes/order_status_badge.html" %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="account-empty">
+      <p>Aún no tienes pedidos vinculados a esta cuenta.</p>
+      <a href="{% url 'catalog:index' %}?view=all" class="btn-gold-pill">Ir a comprar</a>
+    </div>
+    {% endif %}
+  </section>
+
+  {% include "accounts/partials/dashboard_reviews.html" %}
+
+  {% if suggested_products %}
+  <section class="account-section">
+    <div class="account-section__head account-suggested__head">
+      <h2 class="account-section__title">
+        {% if recommendation_source == "search" %}Porque buscaste{% else %}Recomendado para ti{% endif %}
+      </h2>
+      {% if recommendation_source == "search" and search_terms %}
+      <div class="account-suggested__chips">
+        {% for term in search_terms %}
+        <a href="{% url 'catalog:index' %}?q={{ term|urlencode }}" class="cat-pill">{{ term }}</a>
+        {% endfor %}
+      </div>
+      {% elif recommendation_source == "purchases" %}
+      <p class="account-section__sub">Basado en tus compras anteriores</p>
+      {% else %}
+      <p class="account-section__sub">Productos destacados de la tienda</p>
+      {% endif %}
+    </div>
+    <div class="product-grid">
+      {% for product in suggested_products %}
+        {% include "catalog/partials/product_card.html" %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  var inp = document.getElementById('avatar-input');
+  if (inp) {
+    inp.addEventListener('change', function () {
+      if (inp.files && inp.files.length) {
+        document.getElementById('avatar-form').submit();
+      }
+    });
+  }
+}());
+</script>
+{% endblock %}

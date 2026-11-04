@@ -1,0 +1,13 @@
+{% if order.status == 'PENDIENTE CONFIRMACION' %}
+  <span class="status-badge status-badge--pending">PENDIENTE</span>
+{% elif order.status == 'CONFIRMADO' %}
+  <span class="status-badge status-badge--confirmed">CONFIRMADO</span>
+{% elif order.status == 'ENVIADO' %}
+  <span class="status-badge status-badge--shipped">EN REPARTO</span>
+{% elif order.status == 'ENTREGADO' %}
+  <span class="status-badge status-badge--delivered">ENTREGADO</span>
+{% elif order.status == 'CANCELADO' %}
+  <span class="status-badge status-badge--cancelled">CANCELADO</span>
+{% else %}
+  <span class="status-badge status-badge--neutral">{{ order.status }}</span>
+{% endif %}

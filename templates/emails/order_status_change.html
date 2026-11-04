@@ -1,0 +1,77 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Actualización de pedido #{{ order.pk }} — Pegasus Store{% endblock %}
+
+{% block content %}
+<div class="greeting">
+    Hola {{ order.name }}
+</div>
+
+<div class="message">
+    <span class="highlight">{{ status_label }}</span><br>
+    {{ status_message }}
+</div>
+
+<div class="info-box">
+    <div class="info-label">Información del pedido</div>
+    <div class="info-row">
+        <span class="info-key">Número de pedido</span>
+        <span class="info-value">#{{ order.pk }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-key">Estado actual</span>
+        <span class="info-value">{{ status_label }}</span>
+    </div>
+    {% if order.total %}
+    <div class="info-row">
+        <span class="info-key">Total</span>
+        <span class="info-value">${{ order.total|floatformat:0 }}</span>
+    </div>
+    {% endif %}
+</div>
+
+{% if order.shipping_guide %}
+<div class="tracking-box">
+    <div class="tracking-label">Número de guía</div>
+    <div class="tracking-number">{{ order.shipping_guide }}</div>
+    {% if order.carrier %}
+    <div class="tracking-carrier">Transportadora: <strong>{{ order.carrier }}</strong></div>
+    {% endif %}
+    {% if order.tracking_url and "http" in order.tracking_url %}
+    <div style="margin-top: 24px;">
+        <a href="{{ order.tracking_url }}" class="button">Rastrear envío</a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if review_url %}
+<div style="text-align: center; margin: 32px 0 8px;">
+    <div class="info-label">¿Cómo te fue con tu compra?</div>
+    <a href="{{ review_url }}" class="button">Calificar mi compra</a>
+    <p style="font-size: 13px; color: #6A6456; margin-top: 12px;">Tu opinión ayuda a otros clientes a comprar con confianza.</p>
+</div>
+{% endif %}
+
+<div style="text-align: center; margin: 40px 0;">
+    <a href="{{ site_url }}/pedidos/detalle/{{ order.access_token }}/" class="button">Ver detalles completos</a>
+</div>
+
+{% if order.status == "CANCELADO" %}
+<div class="alert-box alert-error">
+    <strong style="display: block; margin-bottom: 8px;">Pedido cancelado</strong>
+    Si crees que esto es un error o necesitas ayuda, por favor contáctanos por WhatsApp.
+</div>
+{% elif order.status == "ENTREGADO" %}
+<div class="alert-box alert-success">
+    <strong style="display: block; margin-bottom: 8px;">¡Entregado exitosamente!</strong>
+    Esperamos que disfrutes tu compra. Tu opinión es muy importante para nosotros.
+</div>
+{% endif %}
+
+<div class="divider"></div>
+
+<div class="message" style="text-align: center; font-size: 14px; color: #a0aec0;">
+    Gracias por confiar en Pegasus Store
+</div>
+{% endblock %}

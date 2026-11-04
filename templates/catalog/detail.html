@@ -1,0 +1,663 @@
+{% extends "base.html" %}
+
+{% load humanize %}
+{% load l10n %}
+{% load design_extras %}
+
+{% block title %}{{ seo_title }}{% endblock %}
+
+{% block meta_description %}{{ seo_meta_description }}{% endblock %}
+{% block canonical_url %}{{ seo_canonical_url }}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_title %}{{ seo_title }}{% endblock %}
+{% block og_description %}{{ seo_meta_description }}{% endblock %}
+{% block og_url %}{{ seo_canonical_url }}{% endblock %}
+{% block og_image %}{% if product.main_image %}<meta property="og:image" content="{{ product.main_image }}">{% endif %}{% endblock %}
+
+{% block json_ld %}
+  <script type="application/ld+json">{{ seo_json_ld }}</script>
+{% endblock %}
+
+{% block robots_meta %}{% if product.seo_noindex %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
+
+{% block main_class %}pg-main pdp-main{% endblock %}
+
+{% block content %}
+<div class="pdp">
+
+  <nav class="pdp__breadcrumb" aria-label="Ruta de navegación">
+    <a href="{% url 'catalog:index' %}">INICIO</a><span>/</span>
+    {% if product.category %}
+      <a href="{{ product.category.dropi_id|category_url }}">{{ product.category|upper }}</a><span>/</span>
+      {% if product_collection and product_collection.category_id == product.category_id %}
+        <a href="{{ product_collection.get_absolute_url }}">{{ product_collection.name|upper }}</a><span>/</span>
+      {% endif %}
+    {% endif %}
+    <span class="pdp__breadcrumb-current">{{ product.shown_name }}</span>
+  </nav>
+
+  <div class="pdp__grid">
+
+    <div class="pdp__gallery-col">
+      <div class="pdp__gallery-frame">
+        {% if display_images %}
+          {% if display_images|length > 1 or custom_videos or product.video_url or product.video_file %}
+          <div class="pdp__gallery-wrap" id="gallery-wrap">
+            <div id="gallery-track" class="pdp__gallery-track">
+              {% for img in display_images %}
+              <div class="gallery-slide pdp__gallery-slide">
+                <img src="{{ img.url|resize_img:"800x800" }}" alt="{{ product.shown_name }} imagen {{ forloop.counter }}" class="pdp__gallery-img" />
+              </div>
+              {% endfor %}
+              {% if product.video_file or product.video_url %}
+              <div class="gallery-slide pdp__gallery-slide pdp__gallery-slide--video">
+                {% if video_file_url %}
+                  <video autoplay muted loop playsinline class="pdp__gallery-video"><source src="{{ video_file_url }}" type="video/mp4"></video>
+                {% elif "youtube" in product.video_url or "youtu.be" in product.video_url or "vimeo" in product.video_url %}
+                  <iframe src="{{ video_embed_url }}" class="pdp__gallery-iframe" allowfullscreen loading="lazy" title="Video de {{ product.shown_name }}"></iframe>
+                {% else %}
+                  <video autoplay muted loop playsinline class="pdp__gallery-video"><source src="{{ product.video_url }}" type="video/mp4"></video>
+                {% endif %}
+              </div>
+              {% endif %}
+              {% for pv in custom_videos %}
+              <div class="gallery-slide pdp__gallery-slide pdp__gallery-slide--video">
+                <video autoplay muted loop playsinline class="pdp__gallery-video"><source src="{{ pv.file.url }}" type="video/mp4"></video>
+              </div>
+              {% endfor %}
+            </div>
+            <button type="button" onclick="galleryMove(-1)" aria-label="Imagen anterior" class="pdp__gallery-nav pdp__gallery-nav--prev">&#10094;</button>
+            <button type="button" onclick="galleryMove(1)" aria-label="Imagen siguiente" class="pdp__gallery-nav pdp__gallery-nav--next">&#10095;</button>
+          </div>
+          {% else %}
+          <div class="pdp__gallery-wrap pdp__gallery-wrap--single">
+            <img id="main-img" src="{{ display_images.0.url|resize_img:"800x800" }}" alt="{{ product.shown_name }}" class="pdp__gallery-img" />
+          </div>
+          {% endif %}
+        {% elif product.category.image %}
+          <div class="pdp__gallery-wrap pdp__gallery-wrap--single">
+            <img src="{{ product.category.image.url|resize_img:"800x800" }}" alt="{{ product.category.name }}" class="pdp__gallery-img" style="opacity:.6" />
+          </div>
+        {% else %}
+          <div class="pdp__gallery-wrap pdp__gallery-wrap--empty"><span>FOTO DEL PRODUCTO</span></div>
+        {% endif %}
+      </div>
+
+      {% if display_images and display_images|length > 1 or custom_videos or product.video_url or product.video_file %}
+      <div class="pdp__thumbs" id="gallery-thumbs">
+        {% for img in display_images %}
+        <button type="button" onclick="galleryGoTo({{ forloop.counter0 }})" aria-label="Ver imagen {{ forloop.counter }}" class="pdp__thumb{% if forloop.first %} is-active{% endif %}">
+          <img src="{{ img.url|resize_img:"150x150" }}" alt="" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" />
+        </button>
+        {% endfor %}
+        {% if product.video_url or product.video_file %}
+        <button type="button" onclick="galleryGoTo({{ display_images|length }})" aria-label="Ver video" class="pdp__thumb pdp__thumb--video">&#9654;</button>
+        {% endif %}
+        {% for pv in custom_videos %}
+        <button type="button" onclick="galleryGoTo({{ display_images|length }}{% if product.video_url or product.video_file %}+1{% endif %}+{{ forloop.counter0 }})" aria-label="Ver video {{ forloop.counter }}" class="pdp__thumb pdp__thumb--video">&#9654;</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="pdp__info">
+      {% if product.category %}<div class="pdp__cat-eyebrow">{{ product.category }}</div>{% endif %}
+      <h1 class="pdp__title">{{ product.shown_name }}</h1>
+
+      <div class="pdp__meta-row">
+        {% if product.display_rating_is_real %}<a href="#reviews" class="pdp__meta-rating">★ {{ product.display_rating }} · {{ product.rating_count }} opinion{{ product.rating_count|pluralize:"es" }}</a><span>·</span>{% endif %}
+        <span class="{% if product.stock > 0 %}pdp__meta-stock{% endif %}">{% if product.stock == 0 %}Agotado temporalmente{% elif product.stock <= 10 %}Últimas {{ product.stock }} unidades · {{ dispatch_label|lower }}{% else %}Disponible · {{ dispatch_label|lower }}{% endif %}</span>
+      </div>
+
+      <div class="pdp__price-row">
+        <span class="pdp__price">${{ product.price|floatformat:0|intcomma }}</span>
+        <span class="pdp__price-cop">MXN</span>
+      </div>
+      <div class="pdp__cod-line">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        Pagas cuando el repartidor te lo entrega{% if product.likely_free_shipping %} · envío gratis{% endif %}
+      </div>
+
+      {% if highlights %}
+      <ul class="pdp__highlights">
+        {% for h in highlights %}<li>{{ h }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if product.category and product.category.dropi_id == "store:bienestar_intimo" %}
+      <div class="pdp__adult-notice"><strong>Producto para adultos +18.</strong> Compra discreta. Uso personal responsable. Mantener fuera del alcance de menores.</div>
+      {% endif %}
+
+      {% if product.stock > 0 %}
+      <form method="post" action="{% url 'cart:add' product.pk %}" class="pdp-purchase-box" id="add-to-cart-form">
+        {# Sin token del servidor: la ficha se sirve desde caché; lo pone withToken() (window.pgsCsrf). #}
+        <input type="hidden" name="csrfmiddlewaretoken" value="" data-csrf>
+
+        {% if is_variable %}
+        <div class="pdp__variant-block">
+          <label class="pdp__field-label" for="variant-select">Elige una opción</label>
+          <select id="variant-select" name="variation_id_display" onchange="selectVariantFromSelect(this)" class="pdp__select">
+            <option value="">-- Elige una opción --</option>
+            {% for v in variants %}
+            <option value="{{ v.id }}" data-stock="{{ v.stock }}" {% if v.stock == 0 %}disabled{% endif %}>
+              {{ v.label }}{% if v.stock == 0 %} (Agotado){% elif v.stock > 0 and v.stock <= 5 %} ({{ v.stock }} disponibles){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <input type="hidden" name="variation_id" id="variation-id-input" value="" />
+        </div>
+        {% endif %}
+
+        <div class="pdp__ctas-row">
+          <div class="pdp__stepper" role="group" aria-label="Cantidad">
+            <button type="button" onclick="adjustQty(-1)" class="pdp__stepper-btn" aria-label="Disminuir cantidad">&minus;</button>
+            <input type="number" id="qty-input" name="quantity" value="1" min="1" max="{{ product.stock }}" class="pdp__stepper-input" aria-label="Cantidad" />
+            <button type="button" onclick="adjustQty(1)" class="pdp__stepper-btn" aria-label="Aumentar cantidad">+</button>
+          </div>
+          <button type="submit" name="next" value="checkout" class="pdp__cta-buy">Pedir ahora — pagas al recibir</button>
+        </div>
+        <button type="submit" id="add-cart-btn" class="pdp__cta-cart">Agregar al carrito</button>
+      </form>
+      {% else %}
+      <div class="pdp__oos">Este producto está agotado temporalmente.</div>
+      {% endif %}
+
+      <ul class="pdp-trust" aria-label="Por qué comprar tranquilo">
+        <li><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10h19M6.5 15h4"/></svg><span><strong>Pagas al recibir</strong>Efectivo o transferencia, sin anticipos</span></li>
+        <li><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span><strong>Revisas antes de pagar</strong>Si no es lo que pediste, no lo recibes</span></li>
+        <li><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg><span><strong>Garantía legal</strong>Cambio o reembolso si llega con falla</span></li>
+      </ul>
+
+      <a class="pdp__ask" href="https://wa.me/{{ store.whatsapp }}?text={{ wa_product_message|urlencode }}" target="_blank" rel="noopener noreferrer" data-track="whatsapp_pdp">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12.05 2a9.9 9.9 0 0 0-8.5 15l-1.4 5 5.1-1.3A9.9 9.9 0 1 0 12.05 2Zm0 18.1a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3a8.2 8.2 0 1 1 6.9 3.7Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>
+        <span>¿Dudas? Pregúntanos por WhatsApp{% if store.support_hours %}<span class="pdp__ask-hours">{{ store.support_hours }}</span>{% endif %}</span>
+      </a>
+
+      <div class="pdp__delivery-box">
+        <div class="pdp__delivery-row">
+          <label for="pdp-city-input">Entrega en</label>
+          <div class="pdp-city" data-cities-url="{% url 'cart:cities_json' %}">
+            <input type="text" id="pdp-city-input" class="pdp__city-input" autocomplete="off" placeholder="Escribe tu ciudad" value="{{ pdp_city }}" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="pdp-city-list">
+            <ul id="pdp-city-list" class="pdp-city__list" role="listbox" hidden></ul>
+          </div>
+        </div>
+        <div class="pdp__delivery-eta">{% if pdp_city %}Llega {{ delivery.eta_text }}{% else %}Llega en {{ delivery_info.range_text }} · elige tu ciudad para ver la fecha{% endif %}</div>
+        {% if shipping_experiment %}
+          {% include "catalog/partials/shipping_experiment.html" %}
+        {% elif shipping_cost_label %}
+        <div class="pdp__delivery-ship">Envío <strong id="pdp-shipping-cost">{{ shipping_cost_label }}</strong> · guía rastreable</div>
+        {% elif product.likely_free_shipping %}
+        <div class="pdp__delivery-ship"><strong id="pdp-shipping-cost">Envío gratis</strong> a cualquier parte de México · guía rastreable</div>
+        {% else %}
+        <div class="pdp__delivery-ship" id="pdp-shipping-cost">Elige tu ciudad para ver el costo del envío</div>
+        {% endif %}
+      </div>
+
+      <section class="pdp-about" aria-labelledby="pdp-about-title">
+        <h2 id="pdp-about-title" class="pdp-about__title">Sobre este producto</h2>
+        {% if intro_text %}<p class="pdp-about__intro">{{ intro_text }}</p>{% endif %}
+        {% if detail_paragraphs %}
+        <div class="pdp-about__details{% if details_long %} is-clamped{% endif %}" id="pdp-about-details">
+          {% for p in detail_paragraphs %}<p>{{ p }}</p>{% endfor %}
+        </div>
+        {% if details_long %}<button type="button" class="pdp-about__more" data-expand="pdp-about-details" aria-expanded="false">Ver descripción completa</button>{% endif %}
+        {% elif not intro_text %}
+        <p class="pdp-about__intro">Escríbenos por WhatsApp y te enviamos fotos reales y medidas de este producto.</p>
+        {% endif %}
+        <dl class="pdp-about__specs">
+          <div><dt>Referencia</dt><dd>PGS-{{ product.pk|add:1000 }}</dd></div>
+          {% if product.category %}<div><dt>Categoría</dt><dd><a href="{{ product.category.dropi_id|category_url }}">{{ product.category }}</a></dd></div>{% endif %}
+          {% if product_collection %}<div><dt>Ver más</dt><dd><a href="{{ product_collection.get_absolute_url }}">{{ product_collection.name }}</a></dd></div>{% endif %}
+          <div><dt>Garantía</dt><dd>Garantía legal (Ley Federal de Protección al Consumidor)</dd></div>
+        </dl>
+      </section>
+
+      <div class="accordion pdp__accordion" data-accordion-group="pdp">
+        <div class="accordion__item pdp-section">
+          <button type="button" class="accordion__trigger pdp-section__trigger" data-accordion-trigger aria-expanded="false">
+            <span>Envío y entrega</span><span class="pdp-section__sign">+</span>
+          </button>
+          <div class="accordion__panel pdp-section__panel" hidden>
+            <div class="pdp-section__row"><span>Cobertura</span><span>Todo México</span></div>
+            <div class="pdp-section__row"><span>Despacho</span><span>Los pedidos de lunes a viernes antes de las {{ delivery_info.cutoff_label }} salen el mismo día</span></div>
+            <div class="pdp-section__row"><span>Tiempo</span><span>{{ delivery_info.zones_text }}</span></div>
+            <div class="pdp-section__row"><span>Costo</span><span>{% if shipping_cost_label %}{{ shipping_cost_label }}{% elif product.likely_free_shipping %}Gratis a cualquier ciudad{% else %}Según tu ciudad; lo ves antes de confirmar{% endif %}</span></div>
+            <div class="pdp-section__row"><span>Guía</span><span>Te la enviamos por WhatsApp al despachar para que la rastrees</span></div>
+          </div>
+        </div>
+        <div class="accordion__item pdp-section">
+          <button type="button" class="accordion__trigger pdp-section__trigger" data-accordion-trigger aria-expanded="false">
+            <span>Pago contra entrega</span><span class="pdp-section__sign">+</span>
+          </button>
+          <div class="accordion__panel pdp-section__panel" hidden>
+            <div class="pdp-section__row"><span>Cuándo pagas</span><span>Al recibir, frente al repartidor</span></div>
+            <div class="pdp-section__row"><span>Medios</span><span>Efectivo o transferencia en el momento</span></div>
+            <div class="pdp-section__row"><span>Anticipo</span><span>Ninguno. No pedimos datos de tarjeta</span></div>
+            <div class="pdp-section__row"><span>Cancelación</span><span>Sin costo en los 15 minutos siguientes, mientras no esté confirmado con la transportadora</span></div>
+          </div>
+        </div>
+        <div class="accordion__item pdp-section">
+          <button type="button" class="accordion__trigger pdp-section__trigger" data-accordion-trigger aria-expanded="false">
+            <span>Cambios, devoluciones y garantía</span><span class="pdp-section__sign">+</span>
+          </button>
+          <div class="accordion__panel pdp-section__panel" hidden>
+            <div class="pdp-section__row"><span>Al recibir</span><span>Revisa el paquete con el repartidor; si no corresponde o llega dañado, no lo recibes y no pagas</span></div>
+            <div class="pdp-section__row"><span>Revocación</span><span>5 días hábiles desde la entrega, producto sin uso y en su empaque</span></div>
+            <div class="pdp-section__row"><span>Garantía</span><span>Mínimo 90 días (LFPC): reparación, cambio o reembolso sin costo para ti</span></div>
+            <div class="pdp-section__row"><span><a href="{% url 'pages:refunds' %}">Ver política completa →</a></span><span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if is_variable %}
+  <dialog id="variant-modal" class="variant-dialog">
+    <h2 class="variant-dialog__title">Elige una opción — {{ product.shown_name }}</h2>
+    <div class="variant-dialog__options">
+      <select id="modal-variant-select" onchange="selectModalVariantFromSelect(this)" class="pdp__select">
+        <option value="">-- Elige una opción --</option>
+        {% for v in variants %}
+        <option value="{{ v.id }}" data-stock="{{ v.stock }}" {% if v.stock == 0 %}disabled{% endif %}>
+          {{ v.label }}{% if v.stock == 0 %} (Agotado){% elif v.stock > 0 and v.stock <= 5 %} ({{ v.stock }} disponibles){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="variant-dialog__actions">
+      <button id="modal-buy-btn" onclick="submitModalVariant('checkout')" disabled class="variant-dialog__confirm">Comprar ahora</button>
+      <button id="modal-cart-btn" onclick="submitModalVariant('')" disabled class="variant-dialog__cancel">Agregar al carrito</button>
+    </div>
+  </dialog>
+  {% endif %}
+
+  {% include "catalog/partials/product_reviews_section.html" %}
+
+  {% if related %}
+  <section class="pdp-related">
+    <h2 class="pdp-related__title">También te puede gustar</h2>
+    {% if product_collection %}<a class="pdp-related__more" href="{{ product_collection.get_absolute_url }}">Ver todos: {{ product_collection.name }} →</a>{% endif %}
+    <div class="pdp-related__rail" data-rail="related" data-autoscroll="0.22">
+      <div class="pdp-related__row">
+        {% for p in related|slice:":8" %}
+        <div class="pdp-related__item">{% include "catalog/partials/product_card.html" with product=p %}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+
+</div>
+
+{% if product.stock > 0 %}
+<div class="pdp-buy-bar" id="pdp-buy-bar" hidden>
+  <div>
+    <div class="pdp-buy-bar__price">${{ product.price|floatformat:0|intcomma }}</div>
+    <div class="pdp-buy-bar__cod">pagas al recibir</div>
+  </div>
+  <button type="submit" form="add-to-cart-form" name="next" value="checkout" class="pdp-buy-bar__cta">Pedir ahora</button>
+</div>
+{% endif %}
+
+<script>
+window.PGS_PRODUCT = {
+  id: '{{ product.pk }}',
+  name: '{{ product.shown_name|escapejs }}',
+  category: '{{ product.category|default:""|escapejs }}',
+  price: parseFloat('{{ product.price|unlocalize }}') || 0
+};
+
+/* ── Gallery carousel ── */
+(function () {
+  var current = 0;
+  var slides, thumbs, total;
+
+  function init() {
+    slides = document.querySelectorAll('.gallery-slide');
+    thumbs = document.querySelectorAll('.pdp__thumb');
+    total  = slides.length;
+  }
+
+  function goTo(n) {
+    if (!slides) init();
+    if (!total) return;
+    var prevVid = slides[current] && slides[current].querySelector('video');
+    if (prevVid) { prevVid.pause(); }
+    current = (n + total) % total;
+    var track = document.getElementById('gallery-track');
+    if (track) track.style.transform = 'translateX(-' + (current * 100) + '%)';
+    thumbs.forEach(function(t, i) { t.classList.toggle('is-active', i === current); });
+    var activeThumb = thumbs[current];
+    if (activeThumb && activeThumb.scrollIntoView) {
+      activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+    var newVid = slides[current] && slides[current].querySelector('video');
+    if (newVid) { newVid.play().catch(function(){}); }
+  }
+
+  window.galleryMove = function(dir) { if (!total) init(); goTo(current + dir); };
+  window.galleryGoTo = goTo;
+
+  var startX = 0;
+  document.addEventListener('DOMContentLoaded', function () {
+    init();
+    var wrap = document.getElementById('gallery-wrap');
+    if (!wrap) return;
+    wrap.addEventListener('touchstart', function(e){ startX = e.touches[0].clientX; }, {passive:true});
+    wrap.addEventListener('touchend', function(e){
+      var dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 40) goTo(current + (dx < 0 ? 1 : -1));
+    }, {passive:true});
+  });
+})();
+
+function adjustQty(delta) {
+  const input = document.getElementById('qty-input');
+  const max = parseInt(input.max) || 999;
+  let val = parseInt(input.value) || 1;
+  val = Math.max(1, Math.min(max, val + delta));
+  input.value = val;
+}
+
+function selectVariantFromSelect(sel) {
+  const val = sel.value;
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('variation-id-input').value = val;
+  const stock = parseInt(opt ? opt.dataset.stock : 0) || 1;
+  const qtyInput = document.getElementById('qty-input');
+  qtyInput.max = stock;
+  if (parseInt(qtyInput.value) > stock) qtyInput.value = stock;
+}
+
+/* Aviso visible al cliente; toast.js lo define en todas las páginas. */
+function pdpNotify(message) {
+  if (window.showToast) window.showToast(message); else window.alert(message);
+}
+
+/* ── Token de seguridad del formulario (la ficha viene de caché sin él) ── */
+var form = document.getElementById('add-to-cart-form');
+var addCartBtn = document.getElementById('add-cart-btn');
+function withToken(fn) {
+  var field = form && form.querySelector('[data-csrf]');
+  var ready = window.pgsCsrf ? window.pgsCsrf() : Promise.resolve('');
+  return ready.then(function (token) {
+    if (field) field.value = token;
+    return fn(token);
+  });
+}
+if (form) {
+  // Se pide apenas el cliente toca la zona de compra, para que al enviar ya esté.
+  ['pointerdown', 'focusin', 'touchstart'].forEach(function (ev) {
+    form.addEventListener(ev, function () { withToken(function () {}); }, { once: true, passive: true });
+  });
+}
+
+/* ── Agregar al carrito por AJAX: toast + badge, sin recargar ── */
+if (form && addCartBtn) {
+  addCartBtn.addEventListener('click', function (e) {
+    var variantInput = document.getElementById('variation-id-input');
+    if (variantInput && variantInput.value === '' && document.getElementById('variant-select')) {
+      e.preventDefault();
+      openVariantModal('');
+      return;
+    }
+    e.preventDefault();
+    var body;
+    withToken(function (token) {
+      body = new URLSearchParams(new FormData(form));
+      body.delete('next');
+      return fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': token },
+        body: body,
+      });
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error('add_failed');
+        return r.json();
+      })
+      .then(function (data) {
+        if (data.success) {
+          if (window.pegasusUpdateCartBadge) window.pegasusUpdateCartBadge(data.cart_count);
+          window.dispatchEvent(new CustomEvent('cart:updated', { detail: data }));
+          var addedQty = parseInt(body.get('quantity'), 10) || 1;
+          if (window.pgsTrackAddToCart) window.pgsTrackAddToCart(window.PGS_PRODUCT, addedQty);
+        } else {
+          pdpNotify(data.error || 'No pudimos agregar el producto. Inténtalo de nuevo.');
+        }
+      })
+      .catch(function () {
+        pdpNotify('No pudimos agregar el producto. Revisa tu conexión e inténtalo de nuevo.');
+      });
+  });
+
+  form.addEventListener('submit', function(e) {
+    var variantInput = document.getElementById('variation-id-input');
+    if (variantInput && variantInput.value === '') {
+      e.preventDefault();
+      const next = (e.submitter && e.submitter.value === 'checkout') ? 'checkout' : '';
+      openVariantModal(next);
+      return;
+    }
+    // Sin token todavía (clic muy rápido): se pide y se reenvía. form.submit()
+    // no lanza otro "submit", así que la medición se hace aquí.
+    var field = form.querySelector('[data-csrf]');
+    if (field && !field.value) {
+      e.preventDefault();
+      var submitter = e.submitter;
+      withToken(function () {
+        if (submitter && submitter.name) {
+          var hidden = document.createElement('input');
+          hidden.type = 'hidden'; hidden.name = submitter.name; hidden.value = submitter.value;
+          form.appendChild(hidden);
+        }
+        var qty = parseInt(document.getElementById('qty-input').value, 10) || 1;
+        if (window.pgsTrackAddToCart) window.pgsTrackAddToCart(window.PGS_PRODUCT, qty);
+        form.submit();
+      });
+    }
+  });
+}
+
+/* ── Variant modal (<dialog> nativo) ── */
+function openVariantModal(nextVal) {
+  var modal = document.getElementById('variant-modal');
+  if (!modal) return;
+  var msel = document.getElementById('modal-variant-select');
+  if (msel) msel.value = '';
+  _setModalBtnsEnabled(false);
+  modal.showModal();
+  modal.dataset.pendingNext = nextVal || '';
+}
+
+function selectModalVariantFromSelect(sel) {
+  _setModalBtnsEnabled(sel.value !== '');
+}
+
+function _setModalBtnsEnabled(on) {
+  ['modal-buy-btn', 'modal-cart-btn'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.disabled = !on;
+  });
+}
+
+function submitModalVariant(nextVal) {
+  var msel = document.getElementById('modal-variant-select');
+  if (!msel || !msel.value) return;
+  document.getElementById('variation-id-input').value = msel.value;
+  var mainSel = document.getElementById('variant-select');
+  if (mainSel) {
+    mainSel.value = msel.value;
+    selectVariantFromSelect(mainSel);
+  }
+  document.getElementById('variant-modal').close();
+  if (nextVal === 'checkout') {
+    var ni = document.createElement('input');
+    ni.type = 'hidden'; ni.name = 'next'; ni.value = 'checkout';
+    form.appendChild(ni);
+    withToken(function () { form.submit(); });
+  } else {
+    addCartBtn.click();
+  }
+}
+
+/* ── Ciudad de entrega: buscador con autocompletar. La lista de municipios
+   se pide una sola vez (cacheada un día) al enfocar el campo, en vez de
+   venir como ~1.000 <option> en cada ficha. ── */
+(function () {
+  var box = document.querySelector('.pdp-city');
+  var input = document.getElementById('pdp-city-input');
+  var list = document.getElementById('pdp-city-list');
+  if (!box || !input || !list) return;
+  var cities = null, loading = null, active = -1, initial = input.value;
+
+  function norm(t) { return (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  function load() {
+    if (cities) return Promise.resolve(cities);
+    if (!loading) {
+      loading = fetch(box.dataset.citiesUrl, { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { cities = d.cities || []; return cities; })
+        .catch(function () { loading = null; return []; });
+    }
+    return loading;
+  }
+  function close() { list.hidden = true; input.setAttribute('aria-expanded', 'false'); active = -1; }
+  function render(q) {
+    var nq = norm(q.trim());
+    if (nq.length < 2) { close(); return; }
+    var starts = [], contains = [];
+    cities.forEach(function (row) {
+      var n = norm(row[0]);
+      if (n.indexOf(nq) === 0) starts.push(row); else if (n.indexOf(nq) > 0) contains.push(row);
+    });
+    var rows = starts.concat(contains).slice(0, 8);
+    list.innerHTML = '';
+    if (!rows.length) {
+      var li = document.createElement('li');
+      li.className = 'pdp-city__empty';
+      li.textContent = 'No encontramos esa ciudad';
+      list.appendChild(li);
+    }
+    rows.forEach(function (row, i) {
+      var li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      li.id = 'pdp-city-opt-' + i;
+      li.dataset.city = row[0];
+      li.dataset.state = row[1];
+      li.innerHTML = '<span></span><small></small>';
+      li.firstChild.textContent = row[0];
+      li.lastChild.textContent = row[1];
+      list.appendChild(li);
+    });
+    list.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+    active = -1;
+  }
+  function choose(li) {
+    if (!li || !li.dataset.city) return;
+    input.value = li.dataset.city;
+    close();
+    (window.pgsCsrf ? window.pgsCsrf() : Promise.resolve(''))
+      .then(function (token) {
+        return fetch("{% url 'cart:save_city' %}", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': token },
+          body: 'city=' + encodeURIComponent(li.dataset.city) + '&state=' + encodeURIComponent(li.dataset.state || ''),
+        });
+      })
+      .then(function (r) { if (!r.ok) throw new Error('city_failed'); return r.json(); })
+      .then(function (data) {
+        if (data && data.ok === false) throw new Error('city_failed');
+        location.reload();
+      })
+      .catch(function () {
+        input.value = initial;
+        pdpNotify('No pudimos actualizar la ciudad de entrega. Inténtalo de nuevo.');
+      });
+  }
+  input.addEventListener('focus', function () { if (input.value === initial) input.select(); load(); });
+  input.addEventListener('input', function () { load().then(function () { render(input.value); }); });
+  input.addEventListener('keydown', function (e) {
+    var opts = list.querySelectorAll('[role=option]');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (!opts.length) return;
+      e.preventDefault();
+      active = (active + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
+      opts.forEach(function (o, i) { o.classList.toggle('is-active', i === active); });
+      input.setAttribute('aria-activedescendant', opts[active].id);
+    } else if (e.key === 'Enter') {
+      if (opts.length) { e.preventDefault(); choose(opts[Math.max(active, 0)]); }
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  });
+  list.addEventListener('mousedown', function (e) {
+    e.preventDefault();
+    choose(e.target.closest('[role=option]'));
+  });
+  input.addEventListener('blur', function () { setTimeout(close, 120); });
+})();
+
+/* ── "Ver descripción completa" ── */
+document.querySelectorAll('[data-expand]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var target = document.getElementById(btn.dataset.expand);
+    if (!target) return;
+    var open = target.classList.toggle('is-clamped') === false;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? 'Ver menos' : 'Ver descripción completa';
+  });
+});
+
+/* ── Barra de compra fija en móvil: aparece al pasar el fold ── */
+(function () {
+  var bar = document.getElementById('pdp-buy-bar');
+  if (!bar) return;
+  function sync() {
+    if (window.innerWidth > 860) { bar.hidden = true; return; }
+    bar.hidden = window.scrollY <= 460;
+  }
+  window.addEventListener('scroll', sync, { passive: true });
+  window.addEventListener('resize', sync);
+  sync();
+})();
+
+</script>
+
+{% endblock %}
+
+{% block analytics_events %}
+<script>
+(function() {
+  var item = window.PGS_PRODUCT;
+  if (typeof gtag !== 'undefined') {
+    gtag('event', 'view_item', {
+      currency: 'MXN',
+      value: item.price,
+      items: [{ item_id: item.id, item_name: item.name, item_category: item.category, price: item.price, quantity: 1 }]
+    });
+  }
+  if (typeof fbq !== 'undefined') {
+    fbq('track', 'ViewContent', { content_ids: [item.id], content_name: item.name, content_type: 'product', currency: 'MXN', value: item.price });
+  }
+
+  // "Pedir ahora" envía el formulario (va directo al checkout). "Agregar al
+  // carrito" agrega por AJAX y se mide en su respuesta. Si otro listener
+  // canceló el envío (falta elegir variante), no se cuenta.
+  var form = document.getElementById('add-to-cart-form');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      if (e.defaultPrevented) return;
+      var qty = parseInt(document.getElementById('qty-input') ? document.getElementById('qty-input').value : 1, 10) || 1;
+      if (window.pgsTrackAddToCart) window.pgsTrackAddToCart(item, qty);
+    });
+  }
+  var ask = document.querySelector('[data-track="whatsapp_pdp"]');
+  if (ask) ask.addEventListener('click', function () {
+    if (typeof gtag !== 'undefined') gtag('event', 'contact_whatsapp', { placement: 'pdp', item_id: item.id });
+  });
+})();
+</script>
+{% endblock %}

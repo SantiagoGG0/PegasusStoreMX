@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load humanize l10n order_tags %}
+
+{% block title %}Pedido recibido | Pegasus Store{% endblock %}
+{% block extra_head %}{{ block.super }}<script>window.PGS_TRACK_NOW = true;</script>{% endblock %}
+{% block main_class %}pg-main track-main{% endblock %}
+
+{% block content %}
+<div class="track-shell">
+  <div class="confirm-head" data-live="head">
+    <div class="confirm-head__icon{% if order.status == 'CANCELADO' %} is-cancel{% endif %}">{% if order.status == 'CANCELADO' %}✕{% else %}✓{% endif %}</div>
+    <h1 class="confirm-head__title">{% if order.status == 'CANCELADO' %}Pedido cancelado{% else %}¡Pedido recibido, {{ order.name }}!{% endif %}</h1>
+    <div class="confirm-head__number">Número de pedido <strong>#{{ order.pk }}</strong></div>
+    {% if order.needs_manual_supplier and order.status != 'CANCELADO' %}
+    <p class="confirm-head__note">Estamos programando el envío con la transportadora. Te escribimos por WhatsApp para confirmarlo; no tienes que hacer nada más ni volver a pedirlo.</p>
+    {% endif %}
+  </div>
+
+  {% if order.status != 'CANCELADO' and order.status != 'ENTREGADO' and customer_confirm_href %}
+  <section class="confirm-wa" aria-labelledby="confirm-wa-title">
+    <div>
+      <h2 class="confirm-wa__title" id="confirm-wa-title">Último paso: confirma tu pedido por WhatsApp</h2>
+      <p class="confirm-wa__text">Así sabemos que vas a poder recibirlo y te escribimos por ese mismo chat con la guía cuando salga. El mensaje ya va escrito, solo tienes que enviarlo.</p>
+    </div>
+    <a href="{{ customer_confirm_href }}" target="_blank" rel="noopener" class="confirm-wa__btn" data-track="whatsapp_confirm">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.05 2a9.9 9.9 0 0 0-8.5 15l-1.4 5 5.1-1.3A9.9 9.9 0 1 0 12.05 2Zm0 18.1a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3a8.2 8.2 0 1 1 6.9 3.7Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>
+      Confirmar por WhatsApp
+    </a>
+  </section>
+  {% endif %}
+
+  {% if sibling_orders %}
+  <section class="track-panel" data-live="siblings">
+    <h2 class="track-panel__title">Tu pedido se dividió en {{ sibling_orders|length|add:1 }} envíos</h2>
+    <p class="track-panel__muted">Incluye productos de bodegas distintas, así que cada una se despacha y se rastrea por separado.</p>
+    <div class="order-items-table">
+      <div class="order-items-table__row"><span>Pedido #{{ order.pk }} (este)</span><span></span><span>{% if order.status == 'CANCELADO' %}No se pudo procesar{% else %}{{ order.get_status_display }}{% endif %}</span></div>
+      {% for sib in sibling_orders %}
+      <div class="order-items-table__row"><span><a href="{% url 'orders:confirmation' sib.access_token %}">Pedido #{{ sib.pk }}</a></span><span></span><span>{% if sib.status == 'CANCELADO' %}No se pudo procesar{% else %}{{ sib.get_status_display }}{% endif %}</span></div>
+      {% endfor %}
+    </div>
+    {% if group_has_failed_order %}<p class="track-panel__muted">Si alguno de tus pedidos no se pudo procesar, nuestro equipo se comunicará contigo para resolverlo.</p>{% endif %}
+  </section>
+  {% endif %}
+
+  <div class="track-card" data-live="card">
+    <div class="track-card__guide" style="border:none;">
+      <span class="track-card__guide-label">ENTREGA EN</span>
+      <span class="track-card__guide-number" style="font-size:16px;">{{ order.city }}{% if order.state %}, {{ order.state }}{% endif %}</span>
+    </div>
+    <p class="confirm-pay-line">Pagas <strong>${{ order.total|floatformat:0|intcomma }}</strong> {% if order.payment_method == "CON RECAUDO" %}al repartidor cuando recibas tu pedido. Ten el valor a la mano.{% else %}según el método de pago elegido.{% endif %}</p>
+    <div class="track-card__timeline">
+      {% include "includes/order_timeline.html" %}
+    </div>
+    {% if order.tracking_url %}
+    <a href="{{ order.tracking_url }}" target="_blank" rel="noopener noreferrer" class="btn-gold-pill track-card__track-btn">Rastrear envío →</a>
+    {% endif %}
+  </div>
+
+  <div class="track-grid">
+    <section class="track-panel">
+      <h2 class="track-panel__title">Datos del pedido</h2>
+      <dl class="track-dl">
+        <div class="track-dl__row"><dt>Nombre</dt><dd>{{ order.name }} {{ order.surname }}</dd></div>
+        {% if order.email %}<div class="track-dl__row"><dt>Correo</dt><dd>{{ order.email }}</dd></div>{% endif %}
+        <div class="track-dl__row"><dt>Teléfono</dt><dd>{{ order.phone }}</dd></div>
+        <div class="track-dl__row"><dt>Dirección</dt><dd>{{ order.address }}, {{ order.city }}, {{ order.state }}</dd></div>
+        <div class="track-dl__row"><dt>Pago</dt><dd>{{ order.get_payment_method_display }}</dd></div>
+      </dl>
+    </section>
+    <section class="track-panel">
+      <h2 class="track-panel__title">Productos</h2>
+      <div class="order-items-table">
+        {% for item in order.items %}
+        <div class="order-items-table__row"><span>{{ item.name }}</span><span>×{{ item.quantity }}</span><span>${{ item.total|floatformat:0|intcomma }}</span></div>
+        {% endfor %}
+        {% if order.shipping_cost %}
+        <div class="order-items-table__row order-items-table__row--muted"><span>Envío</span><span></span><span>${{ order.shipping_cost|floatformat:0|intcomma }}</span></div>
+        {% endif %}
+        <div class="order-items-table__row order-items-table__row--total"><span>Total</span><span></span><span>${{ order.total|floatformat:0|intcomma }}</span></div>
+      </div>
+    </section>
+  </div>
+
+  {% if can_cancel %}
+  <div class="track-cancel" id="cancel-window" data-live="cancel" data-seconds="{{ order|cancel_seconds_remaining }}">
+    <p>¿Te arrepentiste? Puedes cancelar en los próximos <span id="cancel-timer">15:00</span> min.</p>
+    <a href="{% url 'orders:cancel' order.access_token %}">Cancelar pedido</a>
+  </div>
+  {% endif %}
+
+  <div class="confirm-actions">
+    <a href="{{ order_wa_track_href }}" target="_blank" rel="noopener" class="btn-gold-pill">Seguir mi pedido por WhatsApp</a>
+    <a href="{% url 'catalog:index' %}?view=all" class="btn-outline-pill">Volver a la tienda</a>
+  </div>
+  <p class="confirm-contact-note">Si hace falta coordinar la entrega te escribimos al {{ order.phone }}.</p>
+</div>
+
+{% if can_cancel %}
+<script>
+(function () {
+  var box = document.getElementById('cancel-window');
+  if (!box) return;
+  var secs = parseInt(box.getAttribute('data-seconds') || '0', 10);
+  var el = document.getElementById('cancel-timer');
+  function tick() {
+    if (secs <= 0) { box.style.display = 'none'; return; }
+    var m = Math.floor(secs / 60);
+    var s = secs % 60;
+    el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    if (secs <= 120) box.classList.add('is-urgent');
+    secs -= 1;
+    setTimeout(tick, 1000);
+  }
+  tick();
+})();
+</script>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>try { sessionStorage.removeItem('pgs-checkout-draft'); } catch (e) {}</script>
+<script>
+(function () {
+  var btn = document.querySelector('[data-track="whatsapp_confirm"]');
+  if (btn) btn.addEventListener('click', function () {
+    if (typeof gtag !== 'undefined') gtag('event', 'contact_whatsapp', { placement: 'order_confirmation', order_id: '{{ order.pk }}' });
+  });
+})();
+</script>
+{% if order.status != 'ENTREGADO' and order.status != 'CANCELADO' %}
+<script>
+(function () {
+  // Cuando cambia el estado, se refrescan solo las zonas [data-live] en vez
+  // de recargar la página (recargar volvía a disparar los eventos de compra).
+  var pollUrl = "{% url 'orders:order_status_api' order.access_token %}";
+  var currentStatus = "{{ order.status }}";
+  var TERMINAL = ["ENTREGADO", "CANCELADO"];
+  function refreshLive() {
+    fetch(window.location.href, { credentials: "same-origin" })
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (html) {
+        if (!html) return;
+        var doc = new DOMParser().parseFromString(html, "text/html");
+        document.querySelectorAll("[data-live]").forEach(function (el) {
+          var fresh = doc.querySelector('[data-live="' + el.getAttribute("data-live") + '"]');
+          if (fresh) el.replaceWith(fresh); else el.remove();
+        });
+      })
+      .catch(function () {});
+  }
+  var timer = setInterval(function () {
+    fetch(pollUrl, { credentials: "same-origin" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data) return;
+        if (TERMINAL.indexOf(data.status) !== -1) clearInterval(timer);
+        if (data.status !== currentStatus) { currentStatus = data.status; refreshLive(); }
+      })
+      .catch(function () {});
+  }, 15000);
+})();
+</script>
+{% endif %}
+{% endblock %}
+
+{% block analytics_events %}
+{% if track_purchase %}
+<script>
+(function() {
+  // Solo se renderiza en la primera vista tras el checkout (ver
+  // order_confirmation): recargas y visitas desde el correo no cuentan.
+  var orderId    = '{{ order.pk }}';
+  var eventId    = 'purchase-' + orderId;
+  var orderTotal = parseFloat('{{ purchase_total|unlocalize }}') || 0;
+  var shipping   = parseFloat('{{ purchase_shipping|unlocalize }}') || 0;
+  var items = [
+    {% for item in purchase_items %}
+    { item_id: '{{ item.product_id|default:forloop.counter }}', item_name: '{{ item.name|escapejs }}', price: parseFloat('{{ item.price|unlocalize }}') || 0, quantity: {{ item.quantity }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+  if (typeof gtag !== 'undefined') {
+    gtag('event', 'purchase', { transaction_id: orderId, currency: 'MXN', value: orderTotal, shipping: shipping, items: items });
+    {% if GOOGLE_ADS_PURCHASE_SEND_TO %}
+    gtag('event', 'conversion', { send_to: '{{ GOOGLE_ADS_PURCHASE_SEND_TO|escapejs }}', value: orderTotal, currency: 'MXN', transaction_id: orderId });
+    {% endif %}
+  }
+  if (typeof fbq !== 'undefined') {
+    fbq('track', 'Purchase', { content_ids: items.map(function(i){ return i.item_id; }), content_type: 'product', currency: 'MXN', value: orderTotal, num_items: items.length }, { eventID: eventId });
+  }
+  if (typeof ttq !== 'undefined') {
+    ttq.track('CompletePayment', { content_ids: items.map(function(i){ return i.item_id; }), content_type: 'product', value: orderTotal, currency: 'MXN' }, { event_id: eventId });
+  }
+})();
+</script>
+{% endif %}
+{% endblock %}

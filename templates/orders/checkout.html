@@ -1,0 +1,678 @@
+{% extends "base.html" %}
+{% load humanize l10n %}
+{% block title %}Confirma tu pedido | Pegasus Store{% endblock %}
+{% block extra_head %}{{ block.super }}<script>window.PGS_TRACK_NOW = true;</script>{% endblock %}
+{% block main_class %}pg-main checkout-main{% endblock %}
+
+{% block content %}
+<div class="checkout-shell">
+  <div class="checkout-head">
+    <h1 class="checkout-title">Confirma tu pedido</h1>
+    <span class="checkout-badge">1 PASO · ~60 SEGUNDOS</span>
+  </div>
+  <p class="checkout-lead">Sin registro y sin tarjeta. Solo necesitamos dónde entregarlo y a quién llamar.</p>
+
+  {% if multi_supplier %}
+  <div class="checkout-multi-notice" role="status">
+    {{ checkout_multi_guide_message|safe }}
+    <p>Puedes confirmar el pedido; se generará una guía por bodega.</p>
+  </div>
+  {% endif %}
+
+  {% with ck_total=cart.get_total|add:shipping_info.total_shipping %}
+  <div class="checkout-grid">
+    {% include "orders/partials/checkout_summary.html" %}
+
+    <form method="post" id="checkout-form" class="checkout-form" novalidate>
+      {% csrf_token %}
+
+      {# Qué falta corregir, con enlace a cada campo: antes el cliente solo veía #}
+      {# un texto rojo pequeño debajo de un campo, a veces fuera de la pantalla. #}
+      <div id="checkout-errors" class="checkout-errors" role="alert" tabindex="-1"{% if not form.errors %} hidden{% endif %}>
+        <p class="checkout-errors__title">Revisa {% if form.errors|length == 1 %}este dato{% else %}estos {{ form.errors|length }} datos{% endif %} para confirmar tu pedido:</p>
+        <ul class="checkout-errors__list">
+          {% for field in form %}{% if field.errors %}
+          <li><a href="#{% if field.name == 'city' %}city-search{% else %}{{ field.id_for_label }}{% endif %}"><strong>{% if field.name == 'city' %}Municipio{% else %}{{ field.label|cut:" (opcional)" }}{% endif %}:</strong> {{ field.errors.0 }}</a></li>
+          {% endif %}{% endfor %}
+          {% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}
+        </ul>
+      </div>
+
+      <div class="checkout-fields">
+        <label class="checkout-field{% if form.name.errors %} checkout-field--invalid{% endif %}" data-field="name">
+          <span class="checkout-field__label">{{ form.name.label }}</span>
+          {{ form.name }}
+          <span class="checkout-field__error" data-error-for="name"{% if not form.name.errors %} hidden{% endif %}>{{ form.name.errors.0 }}</span>
+        </label>
+        <label class="checkout-field{% if form.surname.errors %} checkout-field--invalid{% endif %}" data-field="surname">
+          <span class="checkout-field__label">{{ form.surname.label }}</span>
+          {{ form.surname }}
+          <span class="checkout-field__error" data-error-for="surname"{% if not form.surname.errors %} hidden{% endif %}>{{ form.surname.errors.0 }}</span>
+        </label>
+        <label class="checkout-field{% if form.phone.errors %} checkout-field--invalid{% endif %}" data-field="phone">
+          <span class="checkout-field__label">{{ form.phone.label }}</span>
+          {{ form.phone }}
+          <span class="checkout-field__error" data-error-for="phone"{% if not form.phone.errors %} hidden{% endif %}>{{ form.phone.errors.0 }}</span>
+        </label>
+        <label class="checkout-field{% if form.email.errors %} checkout-field--invalid{% endif %}" data-field="email">
+          <span class="checkout-field__label">{{ form.email.label }}</span>
+          {{ form.email }}
+          <span class="checkout-field__error" data-error-for="email"{% if not form.email.errors %} hidden{% endif %}>{{ form.email.errors.0 }}</span>
+        </label>
+        <label class="checkout-field{% if form.zip_code.errors %} checkout-field--invalid{% endif %}" data-field="zip_code">
+          <span class="checkout-field__label">{{ form.zip_code.label }}</span>
+          {{ form.zip_code }}
+          <span class="checkout-field__hint" id="zip-hint">Con tu código postal llenamos estado y municipio.</span>
+          <span class="checkout-field__error" data-error-for="zip_code"{% if not form.zip_code.errors %} hidden{% endif %}>{{ form.zip_code.errors.0 }}</span>
+        </label>
+        <label class="checkout-field{% if form.state.errors %} checkout-field--invalid{% endif %}" data-field="state">
+          <span class="checkout-field__label">{{ form.state.label }}</span>
+          {{ form.state }}
+          <span class="checkout-field__error" data-error-for="state"{% if not form.state.errors %} hidden{% endif %}>{{ form.state.errors.0 }}</span>
+        </label>
+        <label class="checkout-field{% if form.city.errors %} checkout-field--invalid{% endif %}" data-field="city">
+          <span class="checkout-field__label">Municipio o alcaldía</span>
+          <div class="city-combobox">
+            {{ form.city }}
+            <div class="city-combobox__control">
+              <input type="text" id="city-search" class="form-input" autocomplete="off"
+                     placeholder="Escribe tu municipio o alcaldía" value="{% if form.is_bound %}{% firstof form.data.city_search form.data.city %}{% else %}{{ city_display|default:'' }}{% endif %}"
+                     name="city_search"{% if form.city.errors %} aria-invalid="true"{% endif %}
+                     aria-autocomplete="list" aria-controls="city-suggestions" aria-expanded="false">
+              <button type="button" id="city-toggle" class="city-combobox__toggle" aria-label="Mostrar municipios" aria-expanded="false">▾</button>
+            </div>
+            <ul id="city-suggestions" class="city-combobox__list hidden" role="listbox"></ul>
+            <p class="city-combobox__hint" id="city-hint">Escribe las primeras letras y elige tu municipio de la lista.</p>
+          </div>
+          <span class="checkout-field__error" data-error-for="city"{% if not form.city.errors %} hidden{% endif %}>{{ form.city.errors.0 }}</span>
+        </label>
+      </div>
+
+      <label class="checkout-field checkout-field--full{% if form.address.errors %} checkout-field--invalid{% endif %}" data-field="address">
+        <span class="checkout-field__label">{{ form.address.label }}</span>
+        {{ form.address }}
+        <span class="checkout-field__error" data-error-for="address"{% if not form.address.errors %} hidden{% endif %}>{{ form.address.errors.0 }}</span>
+      </label>
+
+      <label class="checkout-field checkout-field--full{% if form.notes.errors %} checkout-field--invalid{% endif %}" data-field="notes">
+        <span class="checkout-field__label">{{ form.notes.label }}</span>
+        {{ form.notes }}
+        <span class="checkout-field__hint">Ayuda a que el repartidor te encuentre a la primera.</span>
+        <span class="checkout-field__error" data-error-for="notes"{% if not form.notes.errors %} hidden{% endif %}>{{ form.notes.errors.0 }}</span>
+      </label>
+
+      <div class="checkout-cod-box">
+        <span class="checkout-cod-box__check">✓</span>
+        <div>
+          <div class="checkout-cod-box__title">Pago contra entrega</div>
+          <div class="checkout-cod-box__text">Le pagas al repartidor en efectivo cuando el pedido esté en tus manos.</div>
+        </div>
+      </div>
+      {% if form.payment_method.field.choices|length > 1 %}
+      <div class="checkout-payment-options">
+        {% for choice in form.payment_method %}
+        <label class="checkout-payment-option">{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>
+        {% endfor %}
+      </div>
+      {% if form.payment_method.errors %}<span class="checkout-field__error">{{ form.payment_method.errors.0 }}</span>{% endif %}
+      {% else %}
+      {{ form.payment_method }}
+      {% endif %}
+
+      <p class="checkout-microcopy">
+        Al confirmar aceptas los <a href="{% url 'pages:terms' %}" target="_blank">términos</a> y la
+        <a href="{% url 'pages:privacy' %}" target="_blank">política de privacidad</a>.
+        Si cambias de opinión, puedes cancelarlo sin costo desde la página de tu pedido o escribiéndonos por
+        <a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener">WhatsApp</a> en los 15 minutos siguientes,
+        mientras aún no lo hayamos confirmado con la transportadora.
+      </p>
+      <p class="checkout-errors__inline" id="checkout-errors-inline" hidden>Falta corregir algún dato: está marcado en rojo arriba.</p>
+      <button type="submit" id="checkout-btn" class="checkout-submit">
+        <span id="btn-label">Confirmar pedido{% if has_shipping_city %} · ${{ ck_total|floatformat:0|intcomma }}{% endif %}</span>
+      </button>
+      <div class="checkout-next">
+        <div class="checkout-next__title">Qué pasa después</div>
+        <ol class="checkout-next__steps">
+          <li>Ves la confirmación con el número de tu pedido y el enlace para seguirlo.</li>
+          <li>Al despachar te enviamos la guía por WhatsApp.</li>
+          <li>Revisas el paquete con el repartidor y pagas solo si todo está bien.</li>
+        </ol>
+        <a href="https://wa.me/{{ store.whatsapp }}?text={{ 'Hola, tengo una duda antes de confirmar mi pedido'|urlencode }}" target="_blank" rel="noopener" class="checkout-next__help">¿Dudas? Escríbenos por WhatsApp</a>
+      </div>
+    </form>
+  </div>
+  {% endwith %}
+</div>
+
+{# Aviso fijo en la parte de abajo: en celular el resumen de errores puede #}
+{# quedar fuera de la pantalla; esto no. Desaparece solo al corregir. #}
+<div id="checkout-alert" class="checkout-alert" role="alert" aria-live="assertive" hidden>
+  <p class="checkout-alert__msg"><strong id="checkout-alert-title">Falta un dato</strong><span id="checkout-alert-msg"></span></p>
+  <div class="checkout-alert__actions">
+    <button type="button" id="checkout-alert-fix" class="checkout-alert__btn">Corregir</button>
+    <a id="checkout-alert-wa" class="checkout-alert__wa" href="#" target="_blank" rel="noopener" hidden>Pedir por WhatsApp</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  var summaryBox = document.getElementById('checkout-errors');
+  if (summaryBox && !summaryBox.hidden) summaryBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  if (typeof ttq !== 'undefined') {
+    ttq.track('InitiateCheckout', {
+      content_ids: [{% for item in cart %}{% if item.product %}'{{ item.product.pk }}'{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}],
+      content_type: 'product',
+      value: parseFloat('{{ cart.get_total }}'),
+      currency: 'MXN'
+    });
+  }
+})();
+
+// ── GA4: begin_checkout, add_shipping_info y errores de validación ──
+(function () {
+  if (typeof gtag === 'undefined') return;
+  var CART_VALUE = parseFloat('{{ cart.get_total|unlocalize }}') || 0;
+  var ITEMS = [
+    {% for item in cart %}{ item_id: '{% if item.product %}{{ item.product.pk }}{% else %}{{ forloop.counter }}{% endif %}', item_name: '{{ item.name|escapejs }}', price: parseFloat('{{ item.price|unlocalize }}') || 0, quantity: {{ item.quantity }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+  var form = document.getElementById('checkout-form');
+
+  {% if not form.is_bound %}
+  // Solo en la carga inicial: un re-render por error de validación no es un
+  // nuevo inicio de checkout.
+  gtag('event', 'begin_checkout', { currency: 'MXN', value: CART_VALUE, items: ITEMS });
+  {% else %}
+  // Errores devueltos por el servidor: un evento por campo (solo el nombre
+  // del campo, nunca lo que escribió el cliente).
+  [{% for field in form.errors %}'{{ field|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}].forEach(function (name) {
+    gtag('event', 'checkout_validation_error', { field_name: name, error_source: 'server' });
+  });
+  {% endif %}
+
+  // add_shipping_info: una vez, cuando el cliente elige ciudad (o al enviar
+  // el formulario si la ciudad ya venía precargada).
+  var shippingSent = false;
+  function sendShippingInfo() {
+    if (shippingSent) return;
+    shippingSent = true;
+    gtag('event', 'add_shipping_info', { currency: 'MXN', value: CART_VALUE, shipping_tier: 'contra_entrega', items: ITEMS });
+  }
+  window.pgsCheckoutShippingInfo = sendShippingInfo;
+  if (form) {
+    form.addEventListener('submit', function () {
+      var city = document.getElementById('id_city');
+      if (city && city.value) sendShippingInfo();
+    });
+    // Validación del navegador (campos requeridos vacíos, formato): el
+    // evento "invalid" no burbujea, por eso se escucha en captura.
+    form.addEventListener('invalid', function (e) {
+      var name = e.target && e.target.name;
+      if (name) gtag('event', 'checkout_validation_error', { field_name: name, error_source: 'client' });
+    }, true);
+  }
+})();
+
+// ── Errores visibles por campo, antes de enviar ──
+// El formulario usa novalidate: los globos nativos del navegador desaparecen
+// en segundos y en celular a veces ni se ven. Aquí cada campo con problema
+// queda en rojo con su mensaje y el resumen de arriba lista qué falta.
+(function () {
+  var form = document.getElementById('checkout-form');
+  var btn = document.getElementById('checkout-btn');
+  var label = document.getElementById('btn-label');
+  var summary = document.getElementById('checkout-errors');
+  var inlineNote = document.getElementById('checkout-errors-inline');
+  var initialLabel = label ? label.textContent : '';
+  var LABELS = { name: 'Nombre', surname: 'Apellido', phone: 'Teléfono / WhatsApp', zip_code: 'Código postal',
+                 state: 'Estado', city: 'Municipio', address: 'Calle, número y colonia' };
+
+  var alertBox = document.getElementById('checkout-alert');
+  var alertTitle = document.getElementById('checkout-alert-title');
+  var alertMsg = document.getElementById('checkout-alert-msg');
+  var alertFix = document.getElementById('checkout-alert-fix');
+  var alertWa = document.getElementById('checkout-alert-wa');
+  var ATTEMPT_URL = '{% url "orders:checkout_attempt" %}';
+  var WA_NUMBER = '{{ store.whatsapp|escapejs }}';
+  var CART_LINE = '{% for item in cart %}{{ item.name|escapejs }} x{{ item.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}';
+  var FAILS_KEY = 'pgs-checkout-fails';
+  var firstErrorField = null;
+
+  function fails(add) {
+    var n = 0;
+    try { n = parseInt(sessionStorage.getItem(FAILS_KEY) || '0', 10) || 0; } catch (e) {}
+    if (add) { n += add; try { sessionStorage.setItem(FAILS_KEY, String(n)); } catch (e) {} }
+    return n;
+  }
+  function fieldInput(name) {
+    return name === 'city' ? document.getElementById('city-search') : document.getElementById('id_' + name);
+  }
+  function waText() {
+    var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    var stateEl = document.getElementById('id_state');
+    var dept = stateEl && stateEl.value ? stateEl.options[stateEl.selectedIndex].text : '';
+    var parts = ['Hola, quiero hacer este pedido y la página no me dejó confirmarlo: ' + CART_LINE + '.'];
+    var who = (v('id_name') + ' ' + v('id_surname')).trim();
+    if (who) parts.push('Nombre: ' + who + '.');
+    var where = [v('id_city') || v('city-search'), dept].filter(Boolean).join(', ');
+    if (where) parts.push('Municipio: ' + where + '.');
+    if (v('id_address')) parts.push('Dirección: ' + v('id_address') + '.');
+    if (v('id_zip_code')) parts.push('CP: ' + v('id_zip_code') + '.');
+    if (v('id_phone')) parts.push('Teléfono: ' + v('id_phone') + '.');
+    return parts.join(' ');
+  }
+  // Muestra el aviso con el primer error; a partir del segundo intento fallido
+  // ofrece terminar el pedido por WhatsApp con los datos ya escritos.
+  function showAlert(errs, failCount) {
+    var names = Object.keys(errs);
+    if (!alertBox || !names.length) return;
+    firstErrorField = names[0];
+    alertTitle.textContent = names.length === 1 ? 'Falta corregir un dato' : 'Faltan corregir ' + names.length + ' datos';
+    alertMsg.textContent = (LABELS[names[0]] || '') + ': ' + errs[names[0]];
+    if (alertWa && WA_NUMBER && failCount >= 2) {
+      alertWa.href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(waText());
+      alertWa.hidden = false;
+    }
+    alertBox.hidden = false;
+  }
+  function hideAlertIfFixed() {
+    if (!alertBox || alertBox.hidden) return;
+    var errs = check();
+    if (!Object.keys(errs).length) { alertBox.hidden = true; return; }
+    showAlert(errs, fails(0));
+  }
+  if (alertFix) alertFix.addEventListener('click', function () {
+    var el = firstErrorField && fieldInput(firstErrorField);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(function () { el.focus({ preventScroll: true }); }, 300); }
+  });
+  if (alertWa) alertWa.addEventListener('click', function () {
+    if (typeof gtag !== 'undefined') gtag('event', 'checkout_whatsapp_fallback', { fails: fails(0) });
+  });
+  // Lo que el navegador frenó también queda en el admin (Intentos de compra
+  // fallidos): antes solo se registraba lo que llegaba al servidor.
+  function logAttempt(errs, n) {
+    try {
+      var body = new FormData(form);
+      body.set('errors', JSON.stringify(errs));
+      body.set('try', String(n));
+      fetch(ATTEMPT_URL, { method: 'POST', body: body, credentials: 'same-origin', keepalive: true,
+                           headers: { 'X-CSRFToken': (form.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '' } })
+        .catch(function () {});
+    } catch (e) {}
+  }
+
+  function fieldBox(name) { return form.querySelector('[data-field="' + name + '"]'); }
+  function setError(name, message) {
+    var box = fieldBox(name);
+    var span = form.querySelector('[data-error-for="' + name + '"]');
+    var input = name === 'city' ? document.getElementById('city-search') : document.getElementById('id_' + name);
+    if (box) box.classList.toggle('checkout-field--invalid', !!message);
+    if (span) { span.textContent = message || ''; span.hidden = !message; }
+    if (input) { if (message) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid'); }
+  }
+  window.pgsCheckoutSetError = setError;
+
+  function digits(v) { return (v || '').replace(/\D/g, ''); }
+  // "+52 1 55 1234 5678" → "5512345678" (igual que orders/forms.normalize_phone).
+  function phoneDigits(v) {
+    var d = digits(v);
+    var prefixes = ['00521', '0052', '521', '52', '044', '045'];
+    for (var i = 0; i < prefixes.length; i++) {
+      if (d.indexOf(prefixes[i]) === 0 && d.length - prefixes[i].length === 10) return d.slice(prefixes[i].length);
+    }
+    if (d.length === 11 && d.charAt(0) === '1') d = d.slice(1);
+    return d;
+  }
+  function zipDigits(v) { var d = digits(v); return d.length === 4 ? '0' + d : d; }
+  function check() {
+    var errs = {};
+    var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    if (!val('id_name')) errs.name = 'Escribe tu nombre.';
+    if (!val('id_surname') && val('id_name').split(/\s+/).length < 2) errs.surname = 'Escribe tu apellido.';
+    var ph = phoneDigits(val('id_phone'));
+    if (!ph) errs.phone = 'Escribe tu número de celular, por ejemplo 55 1234 5678.';
+    else if (ph.length !== 10) errs.phone = 'El número tiene ' + ph.length + ' dígitos y un celular en México tiene 10 (por ejemplo 55 1234 5678).';
+    var zp = zipDigits(val('id_zip_code'));
+    if (!zp) errs.zip_code = 'Escribe tu código postal (5 dígitos).';
+    else if (zp.length !== 5) errs.zip_code = 'El código postal tiene 5 dígitos, por ejemplo 06600.';
+    if (!val('id_state') && !val('id_city')) errs.state = 'Elige tu estado.';
+    if (!val('id_city')) errs.city = val('city-search')
+      ? 'Elige tu municipio en la lista que aparece al escribir (no lo encontramos tal como está escrito).'
+      : 'Escribe y elige tu municipio o alcaldía.';
+    if (!val('id_address')) errs.address = 'Escribe la calle, el número y la colonia.';
+    return errs;
+  }
+  function showSummary(errs) {
+    var names = Object.keys(errs);
+    if (!summary) return;
+    summary.hidden = !names.length;
+    if (!names.length) return;
+    var list = summary.querySelector('.checkout-errors__list');
+    summary.querySelector('.checkout-errors__title').textContent = names.length === 1
+      ? 'Revisa este dato para confirmar tu pedido:' : 'Revisa estos ' + names.length + ' datos para confirmar tu pedido:';
+    list.innerHTML = '';
+    names.forEach(function (n) {
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = '#' + (n === 'city' ? 'city-search' : 'id_' + n);
+      var strong = document.createElement('strong');
+      strong.textContent = (LABELS[n] || n) + ': ';
+      a.appendChild(strong);
+      a.appendChild(document.createTextNode(errs[n]));
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+  }
+  ['name', 'surname', 'phone', 'zip_code', 'address'].forEach(function (n) {
+    var el = document.getElementById('id_' + n);
+    if (el) el.addEventListener('input', function () { setError(n, ''); hideAlertIfFixed(); });
+  });
+  // Teléfono: se revisa apenas sale del campo (no hasta enviar) y se deja con
+  // formato legible para que se vea si falta o sobra un número. CDMX (55),
+  // Guadalajara (33) y Monterrey (81) usan lada de 2 dígitos; el resto, de 3.
+  var phoneEl = document.getElementById('id_phone');
+  if (phoneEl) phoneEl.addEventListener('blur', function () {
+    if (!phoneEl.value.trim()) return;
+    var d = phoneDigits(phoneEl.value);
+    if (d.length === 10) {
+      var two = ['55', '56', '33', '81'].indexOf(d.slice(0, 2)) !== -1;
+      phoneEl.value = two ? d.slice(0, 2) + ' ' + d.slice(2, 6) + ' ' + d.slice(6)
+                          : d.slice(0, 3) + ' ' + d.slice(3, 6) + ' ' + d.slice(6);
+      setError('phone', '');
+    }
+    else setError('phone', 'Tiene ' + d.length + ' dígitos y un celular en México tiene 10, por ejemplo 55 1234 5678.');
+  });
+  {% if form.errors %}
+  (function () {
+    var serverErrs = {};
+    {% for field in form %}{% if field.errors %}serverErrs['{{ field.name }}'] = '{{ field.errors.0|escapejs }}';
+    {% endif %}{% endfor %}
+    showAlert(serverErrs, fails(1));
+  })();
+  {% endif %}
+  var stateEl = document.getElementById('id_state');
+  if (stateEl) stateEl.addEventListener('change', function () { setError('state', ''); hideAlertIfFixed(); });
+  window.pgsCheckoutRecheck = hideAlertIfFixed;
+
+  form.addEventListener('submit', function (e) {
+    if (window.pgsCheckoutResolveCity) window.pgsCheckoutResolveCity();
+    var errs = check();
+    Object.keys(LABELS).forEach(function (n) { setError(n, errs[n] || ''); });
+    if (Object.keys(errs).length) {
+      e.preventDefault();
+      var n = fails(1);
+      showSummary(errs);
+      showAlert(errs, n);
+      logAttempt(errs, n);
+      if (inlineNote) inlineNote.hidden = false;
+      if (typeof gtag !== 'undefined') Object.keys(errs).forEach(function (n) {
+        gtag('event', 'checkout_validation_error', { field_name: n, error_source: 'client' });
+      });
+      var first = Object.keys(errs)[0];
+      var target = document.getElementById(first === 'city' ? 'city-search' : 'id_' + first);
+      if (summary) summary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (target) setTimeout(function () { target.focus({ preventScroll: true }); }, 350);
+      return;
+    }
+    if (inlineNote) inlineNote.hidden = true;
+    if (alertBox) alertBox.hidden = true;
+    if (btn && !btn.disabled) {
+      btn.disabled = true;
+      if (label) label.textContent = 'Verificando disponibilidad…';
+    }
+  });
+  // Al volver con "atrás" el navegador restaura la página con el botón
+  // deshabilitado: se reactiva para que se pueda volver a enviar.
+  window.addEventListener('pageshow', function () {
+    if (btn) btn.disabled = false;
+    if (label && label.textContent === 'Verificando disponibilidad…') label.textContent = initialLabel;
+  });
+})();
+
+(function () {
+  var CITIES_BY_DEPT = {{ cities_by_department_json|safe }};
+  var SAVE_URL = '{% url "cart:save_city" %}';
+  var ZIP_URL = '{% url "cart:zip_lookup" zip_code="00000" %}';
+  var SUMMARY_URL = '{% url "orders:checkout_summary" %}';
+  var DRAFT_KEY = 'pgs-checkout-draft';
+  var DRAFT_FIELDS = ['id_name', 'id_surname', 'id_phone', 'id_email', 'id_zip_code', 'id_address', 'id_notes', 'id_state'];
+  var CSRF = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  var searchInput = document.getElementById('city-search');
+  var hiddenCity = document.getElementById('id_city');
+  var list = document.getElementById('city-suggestions');
+  var toggleBtn = document.getElementById('city-toggle');
+  var stateSelect = document.getElementById('id_state');
+  var hint = document.getElementById('city-hint');
+  if (!searchInput || !hiddenCity || !list || !stateSelect) return;
+
+  function norm(s) {
+    return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+  function citiesForCurrentState() { return CITIES_BY_DEPT[stateSelect.value] || []; }
+  function deptLabel(code) {
+    var opt = stateSelect.querySelector('option[value="' + code + '"]');
+    return opt ? opt.text : code;
+  }
+  // Coincidencias en TODOS los estados: [{city, code}]. Así "Guadalajara"
+  // aparece aunque el cliente haya elegido otro estado o ninguno.
+  function searchAllDepartments(q, exact) {
+    var out = [];
+    Object.keys(CITIES_BY_DEPT).forEach(function (code) {
+      (CITIES_BY_DEPT[code] || []).forEach(function (c) {
+        var n = norm(c);
+        if (exact ? n === q : n.indexOf(q) !== -1) out.push({ city: c, code: code, starts: n.indexOf(q) === 0 });
+      });
+    });
+    out.sort(function (a, b) { return (b.starts - a.starts) || a.city.localeCompare(b.city); });
+    return out;
+  }
+  function departmentLabel() {
+    var opt = stateSelect.options[stateSelect.selectedIndex];
+    return opt ? opt.text : '';
+  }
+  function filterCities(query) {
+    var pool = citiesForCurrentState();
+    var q = norm(query.trim());
+    if (!q) return pool.slice(0, 80);
+    return pool.filter(function (c) { return norm(c).indexOf(q) !== -1; }).slice(0, 80);
+  }
+  function setExpanded(open) {
+    searchInput.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function esc(v) { return String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+  function renderSuggestions(matches) {
+    var q = norm(searchInput.value.trim());
+    // Sin departamento, o sin resultados en el elegido: se busca en todos y
+    // cada opción dice su departamento (al elegirla se ajusta solo).
+    if (!stateSelect.value || !matches.length) {
+      var others = q.length >= 2 ? searchAllDepartments(q).slice(0, 12) : [];
+      if (!others.length) {
+        list.innerHTML = '<li class="city-option city-option--empty">' + (q.length >= 2
+          ? 'No encontramos ese municipio con entrega contra entrega. Revisa cómo está escrito.'
+          : 'Escribe las primeras letras de tu municipio o alcaldía') + '</li>';
+        list.classList.remove('hidden'); setExpanded(true); return;
+      }
+      var header = stateSelect.value
+        ? '<li class="city-option city-option--empty">No está en ' + esc(departmentLabel()) + '. ¿Es alguna de estas?</li>' : '';
+      list.innerHTML = header + others.map(function (o) {
+        return '<li class="city-option" role="option" tabindex="-1" data-city="' + esc(o.city) + '" data-state="' + o.code + '">'
+          + esc(o.city) + ' <small>· ' + esc(deptLabel(o.code)) + '</small></li>';
+      }).join('');
+      list.classList.remove('hidden'); setExpanded(true); return;
+    }
+    var html = '';
+    matches.forEach(function (c) {
+      html += '<li class="city-option" role="option" tabindex="-1" data-city="' + esc(c) + '">' + esc(c) + '</li>';
+    });
+    list.innerHTML = html;
+    list.classList.remove('hidden');
+    setExpanded(true);
+  }
+  function hideSuggestions() { list.classList.add('hidden'); list.innerHTML = ''; setExpanded(false); }
+  function openSuggestions() { renderSuggestions(filterCities(searchInput.value)); }
+  function saveDraft() {
+    try {
+      var d = {};
+      DRAFT_FIELDS.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) d[id] = el.value;
+      });
+      d.city = hiddenCity.value;
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+    } catch (e) {}
+  }
+  function restoreDraft() {
+    var d;
+    try { d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { d = null; }
+    if (!d) return;
+    DRAFT_FIELDS.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && !el.value && d[id]) el.value = d[id];
+    });
+    if (!hiddenCity.value && d.city) {
+      var wanted = norm(d.city);
+      var match = citiesForCurrentState().filter(function (c) { return norm(c) === wanted; })[0];
+      if (match) { hiddenCity.value = match; searchInput.value = match; return match; }
+    }
+  }
+  // Refresca envío y total sin recargar: recargar borraba lo ya escrito.
+  function refreshSummary() {
+    return fetch(SUMMARY_URL, { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data || !data.ok) return;
+        var current = document.getElementById('checkout-summary');
+        if (!current) return;
+        var tmp = document.createElement('div');
+        tmp.innerHTML = data.html.trim();
+        var fresh = tmp.querySelector('#checkout-summary');
+        if (!fresh) return;
+        current.replaceWith(fresh);
+        var btn = document.getElementById('checkout-btn');
+        var label = document.getElementById('btn-label');
+        if (btn && label && !btn.disabled && fresh.dataset.submitLabel) label.textContent = fresh.dataset.submitLabel;
+      })
+      .catch(function () {});
+  }
+  function persistCity(cityName) {
+    return fetch(SAVE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': CSRF },
+      body: 'city=' + encodeURIComponent(cityName) + '&state=' + encodeURIComponent(departmentLabel()),
+    }).then(function (r) { return r.json(); })
+      .then(function (data) { if (data.ok) return refreshSummary(); })
+      .catch(function () {});
+  }
+  function selectCity(cityName, stateCode) {
+    if (stateCode && stateCode !== stateSelect.value) {
+      stateSelect.value = stateCode;
+      syncEnabledState();
+    }
+    if (window.pgsCheckoutSetError) { window.pgsCheckoutSetError('city', ''); window.pgsCheckoutSetError('state', ''); }
+    if (window.pgsCheckoutRecheck) setTimeout(window.pgsCheckoutRecheck, 0);
+    hiddenCity.value = cityName;
+    searchInput.value = cityName;
+    hideSuggestions();
+    saveDraft();
+    persistCity(cityName);
+    if (window.pgsCheckoutShippingInfo) window.pgsCheckoutShippingInfo();
+  }
+  function syncEnabledState() {
+    // La ciudad ya no espera al departamento: se puede escribir directo y,
+    // al elegirla, el departamento se completa solo.
+    searchInput.disabled = false;
+    searchInput.placeholder = stateSelect.value ? 'Escribe o elige tu municipio' : 'Escribe tu municipio o alcaldía';
+    if (hint) hint.textContent = 'Escribe las primeras letras y elige tu municipio de la lista.';
+  }
+  // Antes de enviar: si escribió la ciudad pero no la eligió de la lista, se
+  // elige sola cuando hay una sola coincidencia exacta.
+  window.pgsCheckoutResolveCity = function () {
+    if (hiddenCity.value || !searchInput.value.trim()) return;
+    var q = norm(searchInput.value.trim());
+    var inState = citiesForCurrentState().filter(function (c) { return norm(c) === q; });
+    if (inState.length) { selectCity(inState[0]); return; }
+    var all = searchAllDepartments(q, true);
+    if (all.length === 1) selectCity(all[0].city, all[0].code);
+  };
+  stateSelect.addEventListener('change', function () {
+    syncEnabledState();
+    var current = norm(hiddenCity.value);
+    var stillValid = citiesForCurrentState().some(function (c) { return norm(c) === current; });
+    if (!stillValid) { hiddenCity.value = ''; searchInput.value = ''; }
+    hideSuggestions();
+  });
+  searchInput.addEventListener('input', function () { hiddenCity.value = ''; openSuggestions(); });
+  searchInput.addEventListener('focus', function () { if (searchInput.value.trim()) openSuggestions(); });
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function () {
+      if (!list.classList.contains('hidden')) { hideSuggestions(); return; }
+      openSuggestions();
+      searchInput.focus();
+    });
+  }
+  searchInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var first = list.querySelector('li.city-option[data-city]');
+      if (first) selectCity(first.getAttribute('data-city'), first.getAttribute('data-state'));
+    }
+    if (e.key === 'Escape') hideSuggestions();
+  });
+  list.addEventListener('mousedown', function (e) {
+    var item = e.target.closest('li.city-option[data-city]');
+    if (!item) return;
+    e.preventDefault();
+    selectCity(item.getAttribute('data-city'), item.getAttribute('data-state'));
+  });
+  searchInput.addEventListener('blur', function () { window.pgsCheckoutResolveCity(); });
+  document.addEventListener('click', function (e) { if (!e.target.closest('.city-combobox')) hideSuggestions(); });
+
+  // Código postal → estado y municipio (cart:zip_lookup, datos de Dropi).
+  // Si el CP no está en la lista no se bloquea nada: el cliente elige a mano.
+  var zipInput = document.getElementById('id_zip_code');
+  var zipHint = document.getElementById('zip-hint');
+  var lastZip = '';
+  function lookupZip() {
+    var d = (zipInput.value || '').replace(/\D/g, '');
+    if (d.length === 4) d = '0' + d;
+    if (d.length !== 5 || d === lastZip) return;
+    lastZip = d;
+    fetch(ZIP_URL.replace('00000', d), { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data || d !== lastZip) return;
+        var m = data.matches || [];
+        if (m.length === 1) {
+          selectCity(m[0].city, m[0].state);
+          if (zipHint) zipHint.textContent = 'CP ' + d + ': ' + m[0].city + ', ' + m[0].state_label + ' ✓';
+        } else if (m.length > 1) {
+          if (m.every(function (x) { return x.state === m[0].state; }) && stateSelect.value !== m[0].state) {
+            stateSelect.value = m[0].state; syncEnabledState();
+          }
+          if (zipHint) zipHint.textContent = 'Ese CP está en ' + m.map(function (x) { return x.city; }).join(' o ') + ': elige tu municipio.';
+        } else if (zipHint) {
+          zipHint.textContent = 'Elige tu estado y municipio abajo.';
+        }
+      })
+      .catch(function () {});
+  }
+  if (zipInput) {
+    zipInput.addEventListener('input', lookupZip);
+    zipInput.addEventListener('blur', lookupZip);
+  }
+
+  var checkoutForm = document.getElementById('checkout-form');
+  checkoutForm.addEventListener('input', saveDraft);
+  checkoutForm.addEventListener('change', saveDraft);
+
+  var restoredCity = restoreDraft();
+  syncEnabledState();
+  if (restoredCity) persistCity(restoredCity);
+  else if (zipInput && zipInput.value && !hiddenCity.value) lookupZip();
+})();
+</script>
+{% endblock %}

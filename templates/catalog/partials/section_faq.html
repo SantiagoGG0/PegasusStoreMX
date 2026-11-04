@@ -1,0 +1,41 @@
+{% with ctx=section.context %}
+<section class="faq-section" id="faq" aria-labelledby="faq-title">
+  <div class="faq-col">
+    <div class="home-section__eyebrow">Preguntas frecuentes</div>
+    <h2 class="home-section__title" id="faq-title">Lo que más nos preguntan</h2>
+    <div class="accordion" data-accordion-group="faq">
+      {% for item in ctx.faq_items %}
+      <div class="accordion__item faq-item">
+        <button type="button" class="accordion__trigger faq-item__trigger" data-accordion-trigger aria-expanded="false">
+          <span>{{ item.q }}</span><span class="faq-item__sign">+</span>
+        </button>
+        <div class="accordion__panel faq-item__panel" hidden>{{ item.a }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <a href="{{ ctx.wa_href }}" target="_blank" rel="noopener" class="faq-col__more">Tengo otra pregunta →</a>
+  </div>
+
+  <div class="wa-channel">
+    {% if ctx.channel_url %}
+    <div class="wa-channel__eyebrow">Canal de WhatsApp</div>
+    <h3 class="wa-channel__title">Súmate al canal de <span>WhatsApp</span></h3>
+    <div class="wa-channel__perks">
+      <div class="wa-channel__perk"><span>✓</span> <span><strong>Productos nuevos</strong> antes que nadie</span></div>
+      <div class="wa-channel__perk"><span>✓</span> <span><strong>Promociones</strong> cuando las haya</span></div>
+    </div>
+    <a href="{{ ctx.channel_url }}" target="_blank" rel="noopener" class="wa-channel__cta">Unirme al canal</a>
+    <div class="wa-channel__note">Puedes salirte cuando quieras.</div>
+    {% else %}
+    <div class="wa-channel__eyebrow">Atención por WhatsApp</div>
+    <h3 class="wa-channel__title">¿Dudas antes de comprar? Escríbenos por <span>WhatsApp</span></h3>
+    <div class="wa-channel__perks">
+      <div class="wa-channel__perk"><span>✓</span> <span>Te enviamos <strong>fotos reales y medidas</strong> del producto</span></div>
+      <div class="wa-channel__perk"><span>✓</span> <span>Te decimos <strong>cuándo llega</strong> a tu ciudad</span></div>
+      <div class="wa-channel__perk"><span>✓</span> <span>Te ayudamos con <strong>tu pedido</strong> o un cambio</span></div>
+    </div>
+    <a href="{{ ctx.wa_href }}" target="_blank" rel="noopener" class="wa-channel__cta">Escribir por WhatsApp</a>
+    {% endif %}
+  </div>
+</section>
+{% endwith %}

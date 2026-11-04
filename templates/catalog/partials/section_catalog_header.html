@@ -1,0 +1,49 @@
+{% with ctx=section.context %}
+<section class="catalog-heading" aria-labelledby="catalog-heading">
+  <div class="catalog-heading__row">
+    <div>
+      <h1 id="catalog-heading" class="catalog-heading__title">
+        {% if ctx.search_query %}Resultados para &ldquo;{{ ctx.search_query }}&rdquo;
+        {% elif ctx.category_label %}{{ ctx.category_label }}
+        {% else %}Todo el catálogo{% endif %}
+      </h1>
+      <div class="catalog-heading__count">{{ ctx.page_obj.paginator.count }} PRODUCTOS · TODOS CON PAGO CONTRA ENTREGA</div>
+      {% if ctx.category_intro %}<p class="catalog-heading__intro">{{ ctx.category_intro }}</p>{% endif %}
+      {% if ctx.collections %}
+      <nav class="catalog-heading__types" aria-label="Explora por tipo">
+        <span class="catalog-heading__types-label">Explora por tipo:</span>
+        {% for c in ctx.collections %}<a href="{{ c.get_absolute_url }}" class="cat-pill">{{ c.name }}</a>{% endfor %}
+      </nav>
+      {% endif %}
+    </div>
+    <label class="catalog-heading__sort">
+      <select class="catalog-heading__select" onchange="window.applyCatalogSort && window.applyCatalogSort(this.value)">
+        <option value="featured"{% if ctx.sort == "featured" %} selected{% endif %}>Relevancia</option>
+        <option value="price_asc"{% if ctx.sort == "price_asc" %} selected{% endif %}>Precio: menor a mayor</option>
+        <option value="price_desc"{% if ctx.sort == "price_desc" %} selected{% endif %}>Precio: mayor a menor</option>
+        <option value="rating"{% if ctx.sort == "rating" %} selected{% endif %}>Mejor calificados</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="catalog-heading__mobile-actions">
+    <button type="button" class="catalog-heading__mobile-btn" data-sheet-open="sheet-filters">
+      Filtros
+      {% if ctx.active_filters.envio or ctx.active_filters.rating or ctx.active_filters.precio %}
+      <span class="catalog-heading__mobile-badge">•</span>
+      {% endif %}
+    </button>
+    <button type="button" class="catalog-heading__mobile-btn" data-sheet-open="sheet-sort">Ordenar ⇅</button>
+  </div>
+
+  {% if ctx.page_obj.paginator.count == 0 %}
+  <div class="catalog-empty">
+    <div class="catalog-empty__title">Nada con ese nombre. Escríbenos y lo conseguimos por ti.</div>
+    <div class="catalog-empty__actions">
+      <a href="{% url 'catalog:index' %}?view=all" class="btn-gold-pill">Ver todo el catálogo</a>
+      {% include "includes/whatsapp_button.html" with label="Pedirlo por WhatsApp" wa_message="Hola, busco un producto que no encontré en la tienda" extra_class="btn-outline-pill" %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endwith %}

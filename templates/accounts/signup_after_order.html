@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Crear cuenta | Pegasus Store{% endblock %}
+
+{% block content %}
+<div class="account-shell">
+  {% include "includes/page_header.html" with title="Crea tu cuenta" subtitle="Pedido recibido" %}
+
+  <p class="account-foot">
+    Regístrate con el correo <strong>{{ order.email }}</strong> para ver tus pedidos sin buscar por email.
+  </p>
+
+  <form method="post" class="account-card">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <p class="account-error">{{ form.non_field_errors.0 }}</p>
+    {% endif %}
+
+    <div class="account-fields">
+      <div>
+        <label class="account-field__label" for="id_email">Correo</label>
+        {{ form.email }}
+      </div>
+
+      <div>
+        <label class="account-field__label" for="id_first_name">Nombre</label>
+        {{ form.first_name }}
+      </div>
+
+      <div>
+        <label class="account-field__label" for="id_password1">Contraseña</label>
+        {{ form.password1 }}
+        {% if form.password1.errors %}<span class="account-field__error">{{ form.password1.errors.0 }}</span>{% endif %}
+      </div>
+
+      <div>
+        <label class="account-field__label" for="id_password2">Confirmar contraseña</label>
+        {{ form.password2 }}
+      </div>
+
+      <button type="submit" class="account-submit">Crear cuenta</button>
+
+      <p class="account-foot">¿Ya tienes cuenta? <a href="{% url 'accounts:login' %}">Inicia sesión</a></p>
+    </div>
+  </form>
+</div>
+{% endblock %}

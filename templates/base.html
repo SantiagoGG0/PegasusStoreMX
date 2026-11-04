@@ -1,0 +1,458 @@
+{% load design_extras %}{% load static %}<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>
+/* Tema claro/oscuro — aplicado antes de pintar para evitar destello.
+   Misma lógica reutilizada por static/js/theme-toggle.js (API en window.pgsTheme). */
+(function () {
+  var TOKENS = {
+    dark: {
+      '--bg': '#100F0D', '--bgtop': '#1B1915', '--sheet': '#16150F', '--chrome': '#1C1A16', '--phone': '#0B0A09',
+      '--ink': '#F2EFE9', '--ink2': '#E3DFD6', '--ink3': '#C9C4B8', '--ink4': '#A9A49A', '--ink5': '#8D8779', '--ink6': '#6E695F', '--ink7': '#5A564E',
+      '--inkrgb': '242,239,233', '--bgrgb': '16,15,13', '--white': '#FFFFFF',
+      '--accent': '#E8C169', '--accentink': '#E8C169', '--accenthi': '#F5DFA6', '--accent2': '#9A7522', '--accentdeep': '#8A6A12', '--accentrgb': '232,193,105',
+      '--green': '#5FBE8C', '--greenink': '#5FBE8C', '--greenink2': '#9FE0BE', '--greenink3': '#CFEFDF', '--ongreen': '#0B1F16', '--greenrgb': '95,190,140',
+      '--onaccent': '#14120E', '--onaccent2': '#17150F',
+      '--invbg': '#F2EFE9', '--invink': '#14120E',
+      '--error': '#F2A6A6', '--errorrgb': '240,163,163', '--onerror': '#3A0E0E',
+      '--shadrgb': '0,0,0'
+    },
+    light: {
+      '--bg': '#FBF9F4', '--bgtop': '#FFFFFF', '--sheet': '#FFFFFF', '--chrome': '#E4DED2', '--phone': '#FFFFFF',
+      '--ink': '#14120E', '--ink2': '#221F18', '--ink3': '#403C33', '--ink4': '#55503F', '--ink5': '#6A6456', '--ink6': '#736D5F', '--ink7': '#837D6F',
+      '--inkrgb': '26,23,17', '--bgrgb': '251,249,244', '--white': '#14120E',
+      '--accent': '#E8C169', '--accentink': '#7A5A08', '--accenthi': '#946C09', '--accent2': '#B8892A', '--accentdeep': '#7A5A08', '--accentrgb': '176,131,29',
+      '--green': '#16794A', '--greenink': '#1B7A4A', '--greenink2': '#14603A', '--greenink3': '#123D28', '--ongreen': '#FFFFFF', '--greenrgb': '46,158,104',
+      '--onaccent': '#14120E', '--onaccent2': '#17150F',
+      '--invbg': '#14120E', '--invink': '#FBF9F4',
+      '--error': '#B3261E', '--errorrgb': '179,38,30', '--onerror': '#FFFFFF',
+      '--shadrgb': '120,104,70'
+    }
+  };
+  var STORAGE_KEY = 'pgs-theme';
+  var root = document.documentElement;
+
+  function getStored() {
+    try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; }
+  }
+  function setStored(theme) {
+    try { localStorage.setItem(STORAGE_KEY, theme); } catch (e) {}
+  }
+
+  function apply(theme) {
+    var map = TOKENS[theme] || TOKENS.dark;
+    for (var prop in map) {
+      if (Object.prototype.hasOwnProperty.call(map, prop)) root.style.setProperty(prop, map[prop]);
+    }
+    root.style.colorScheme = theme;
+    root.setAttribute('data-theme', theme);
+  }
+
+  function set(theme) {
+    theme = theme === 'light' ? 'light' : 'dark';
+    apply(theme);
+    setStored(theme);
+    document.dispatchEvent(new CustomEvent('pgs:theme-changed', { detail: { theme: theme } }));
+  }
+
+  var current = getStored() === 'dark' ? 'dark' : 'light';
+  apply(current);
+
+  window.pgsTheme = {
+    get: function () { return current; },
+    set: function (theme) { current = theme === 'light' ? 'light' : 'dark'; set(current); },
+    toggle: function () { current = current === 'light' ? 'dark' : 'light'; set(current); }
+  };
+})();
+</script>
+<title>{% block title %}Pegasus Store — Pago contra entrega en todo México{% endblock %}</title>
+
+<meta name="description" content="{% block meta_description %}Pegasus Store: compra en México con pago contra entrega. Revisas el pedido con el repartidor y solo entonces pagas. Envío a todo el país.{% endblock %}">
+<link rel="canonical" href="{% block canonical_url %}{{ SITE_URL }}{{ request.path }}{% endblock %}">
+{% block robots_meta %}{% endblock %}
+<meta property="og:site_name" content="Pegasus Store">
+<meta property="og:locale" content="es_MX">
+<meta property="og:type" content="{% block og_type %}website{% endblock %}">
+<meta property="og:title" content="{% block og_title %}Pegasus Store{% endblock %}">
+<meta property="og:description" content="{% block og_description %}Pago contra entrega en todo el país. Revisas el producto y solo entonces pagas.{% endblock %}">
+<meta property="og:url" content="{% block og_url %}{{ SITE_URL }}{{ request.path }}{% endblock %}">
+{% block og_image %}<meta property="og:image" content="{{ SITE_URL }}{% static 'images/logo.jpeg' %}">{% endblock %}
+<meta name="twitter:card" content="summary_large_image">
+{% block extra_meta %}{% endblock %}
+{% block json_ld %}{% endblock %}
+
+<link rel="preconnect" href="https://d39ru7awumhhs2.cloudfront.net" crossorigin>
+<link rel="dns-prefetch" href="https://d39ru7awumhhs2.cloudfront.net">
+<link rel="preconnect" href="https://images.weserv.nl" crossorigin>
+<link rel="dns-prefetch" href="https://images.weserv.nl">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+{% comment %} Fuentes sin bloquear el primer dibujo (Core Web Vitals): se piden como
+   preload y se aplican al llegar; display=swap muestra el texto ya. {% endcomment %}
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" /></noscript>
+
+<link rel="stylesheet" href="{% static 'css/store.css' %}?v=18" />
+
+<link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}" />
+<link rel="apple-touch-icon" href="{% static 'images/favicon.svg' %}" />
+
+{% block extra_head %}{% endblock %}
+
+<!-- Google tag (gtag.js): GA4 carga de inmediato (async, no bloquea) para que
+     cuente también las visitas cortas; Google Ads y el resto esperan al load. -->
+{% if GA4_MEASUREMENT_ID %}<script async src="https://www.googletagmanager.com/gtag/js?id={{ GA4_MEASUREMENT_ID }}"></script>{% endif %}
+<script>
+  /* Scripts de medición después de que la página cargó (o antes si la persona
+     interactúa): sacan ~400 ms de bloqueo del celular y no compiten con la
+     foto principal. Los eventos llamados antes quedan en cola y se envían. */
+  window.pgsAfterLoad = (function () {
+    var queue = [], done = false;
+    function flush() {
+      if (done) return; done = true;
+      queue.forEach(function (fn) { try { fn(); } catch (e) {} });
+      queue = [];
+      ['scroll', 'pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { removeEventListener(ev, flush); });
+    }
+    function idle() { (window.requestIdleCallback || function (cb) { setTimeout(cb, 1); })(flush, { timeout: 2500 }); }
+    if (document.readyState === 'complete') idle(); else addEventListener('load', idle);
+    ['scroll', 'pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { addEventListener(ev, flush, { passive: true, once: true }); });
+    // Checkout y confirmación (PGS_TRACK_NOW): la compra se mide sin esperar,
+    // si el cliente cierra la página en seguida no se pierde la conversión.
+    return function (fn) { if (done || window.PGS_TRACK_NOW) fn(); else queue.push(fn); };
+  })();
+  window.pgsLoadScript = function (src) {
+    pgsAfterLoad(function () { var s = document.createElement('script'); s.async = true; s.src = src; document.head.appendChild(s); });
+  };
+  {% if GOOGLE_ADS_ID and not GA4_MEASUREMENT_ID %}pgsLoadScript('https://www.googletagmanager.com/gtag/js?id={{ GOOGLE_ADS_ID|escapejs }}');{% endif %}
+</script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  {% if GOOGLE_ADS_ID %}gtag('config', '{{ GOOGLE_ADS_ID|escapejs }}');{% endif %}
+  {% if GA4_MEASUREMENT_ID %}gtag('config', '{{ GA4_MEASUREMENT_ID }}');{% endif %}
+
+  /* Token de seguridad para agregar al carrito o comprar. Las páginas del
+     catálogo se sirven desde caché sin cookies; si el visitante aún no tiene
+     la cookie csrftoken, se pide a /carrito/estado/ la primera vez. */
+  window.pgsCsrf = function () {
+    var read = function () { var m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/); return m ? m[1] : ''; };
+    var token = read();
+    if (token) return Promise.resolve(token);
+    return fetch('{% url "cart:state" %}', { credentials: 'same-origin' }).then(read, read);
+  };
+
+  /* add_to_cart para GA4, Meta y TikTok desde cualquier botón (ficha,
+     tarjeta, carrito). item = {id, name, category, price}. */
+  window.pgsTrackAddToCart = function (item, qty) {
+    if (!item) return;
+    qty = qty || 1;
+    var value = (item.price || 0) * qty;
+    try {
+      gtag('event', 'add_to_cart', { currency: 'MXN', value: value, items: [{ item_id: String(item.id), item_name: item.name || '', item_category: item.category || '', price: item.price || 0, quantity: qty }] });
+      if (window.fbq) fbq('track', 'AddToCart', { content_ids: [String(item.id)], content_name: item.name || '', content_type: 'product', currency: 'MXN', value: value });
+      if (window.ttq) ttq.track('AddToCart', { content_id: String(item.id), content_type: 'product', quantity: qty, value: value, currency: 'MXN' });
+    } catch (e) {}
+  };
+</script>
+
+{% if META_PIXEL_ID %}
+<script>
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window,document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '{{ META_PIXEL_ID }}');
+  fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id={{ META_PIXEL_ID }}&ev=PageView&noscript=1"/></noscript>
+{% endif %}
+
+{% if TIKTOK_PIXEL_ID %}
+<script>
+  !function (w, d, t) {
+    w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
+    var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
+    ;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;pgsAfterLoad(function(){var f=document.getElementsByTagName("script")[0];f.parentNode.insertBefore(n,f)})};
+    ttq.load('{{ TIKTOK_PIXEL_ID }}');
+    ttq.page();
+  }(window, document, 'ttq');
+</script>
+{% endif %}
+
+<!-- Microsoft Clarity: solo con CLARITY_PROJECT_ID y en el dominio canónico
+     (una copia del HTML en otro sitio no mete sus visitas en el proyecto). -->
+{% if CLARITY_PROJECT_ID %}
+<script type="text/javascript">
+  if (location.origin === '{{ SITE_URL|escapejs }}') (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      pgsAfterLoad(function(){y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);});
+  })(window, document, "clarity", "script", "{{ CLARITY_PROJECT_ID|escapejs }}");
+</script>
+{% endif %}
+
+<script>
+/* Fotos de producto rotas (el proveedor borró la imagen en Dropi): en el
+   carrusel de la tarjeta se quita esa foto; si era la única, o en la ficha,
+   se muestra el logo en lugar del ícono de imagen rota. Se registra en
+   Clarity como "imagen_rota" para filtrar esas sesiones. Va en el <head>
+   porque el evento error de <img> no burbujea y puede dispararse antes de
+   que carguen los scripts del final del body. */
+window.addEventListener('error', function (e) {
+  var img = e.target;
+  if (!img || img.tagName !== 'IMG' || img.dataset.broken) return;
+  if (!img.classList.contains('product-card__slide') && !img.classList.contains('pdp__gallery-img')) return;
+  img.dataset.broken = '1';
+  if (window.clarity) window.clarity('set', 'imagen_rota', '1');
+  var track = img.closest('.product-card__track');
+  if (track && track.children.length > 1) {
+    var wrap = img.closest('.product-card__media-wrap');
+    var dots = wrap ? wrap.querySelectorAll('.product-card__dot') : [];
+    if (dots.length) dots[dots.length - 1].remove();
+    img.remove();
+    return;
+  }
+  img.src = '{% static "images/logo.jpeg" %}';
+  img.style.objectFit = 'contain';
+  img.style.opacity = '.35';
+}, true);
+</script>
+
+</head>
+<body>
+<a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+<div class="pg-root">
+
+  <div class="pg-navbar" id="pg-navbar">
+    <header class="site-header" id="site-header">
+      <div class="site-header__row">
+        <a href="{% url 'catalog:index' %}" class="site-logo">
+          <span class="site-logo__mark">
+            <img src="{% static 'images/logo.jpeg' %}" alt="{{ store.name }}" class="site-logo__img" onerror="this.parentElement.textContent='P'">
+          </span>
+          <span class="site-logo__word">
+            <span class="site-logo__word-main">Pegasus</span>
+            <span class="site-logo__word-sub">STORE · CO</span>
+          </span>
+        </a>
+
+        <div class="site-search site-search--desktop">
+          {% include "includes/search_bar.html" with variant="header" %}
+        </div>
+
+        <nav class="site-nav" aria-label="Principal">
+          <a href="{% url 'catalog:index' %}?view=all" class="site-nav__link{% if request.GET.view == 'all' or request.GET.category or request.GET.q %} is-active{% endif %}">Catálogo</a>
+          <a href="{% url 'pages:trust' %}" class="site-nav__link{% if request.resolver_match.url_name == 'trust' %} is-active{% endif %}">Confianza</a>
+          <a href="{% url 'orders:track' %}" class="site-nav__link{% if request.resolver_match.url_name == 'track' %} is-active{% endif %}">Mi pedido</a>
+          <a href="{% url 'cart:detail' %}" class="site-cart-pill" aria-label="Carrito{% if cart|length > 0 %}, {{ cart|length }} productos{% endif %}">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 4.3h2.3l2.3 10.4h9.4l1.9-7.3H6.2M10.1 19a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0M18.3 19a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0"></path></svg>
+            <span class="site-cart-pill__label">Carrito</span>
+            <span id="cart-badge" class="site-cart-pill__badge{% if cart|length == 0 %} hidden{% endif %}">{{ cart|length }}</span>
+          </a>
+        </nav>
+
+        <div class="site-header__mobile-right">
+          <span class="cod-chip">
+            <span class="cod-chip__dot"></span>
+            Pagas al recibir
+          </span>
+        </div>
+      </div>
+    </header>
+
+    {% if nav_categories %}
+    <div class="cat-rail" data-rail="cats">
+      <div class="cat-rail__row">
+        <a href="{% url 'catalog:index' %}" class="cat-pill{% if not request.GET.category %} is-active{% endif %}">Todos</a>
+        {% for cat in nav_categories %}
+        <a href="{{ cat.dropi_id|category_url }}" class="cat-pill{% if request.GET.category == cat.dropi_id %} is-active{% endif %}">{{ cat.name }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if messages %}
+  <div class="flash-messages" role="alert">
+    {% for message in messages %}
+    <div class="flash-message{% if message.tags == 'error' %} flash-message--error{% elif message.tags == 'warning' %} flash-message--warning{% else %} flash-message--success{% endif %}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <main id="main-content" class="{% block main_class %}pg-main{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__col">
+        <div class="site-footer__brand">Pegasus Store</div>
+        <p class="site-footer__lead">Productos para tu hogar y tu familia, con envío a todo México y pago contra entrega.</p>
+        <address class="site-footer__legal">
+          {{ store.legal_name }}{% if store.nit %}<br>RFC {{ store.nit }}{% endif %}<br>
+          {% if store.address %}{{ store.address }}, {% endif %}{{ store.city }}<br>
+          WhatsApp: <a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener">{{ store.whatsapp_display }}</a>{% if store.email %}<br>
+          <a href="mailto:{{ store.email }}">{{ store.email }}</a>{% endif %}
+        </address>
+      </div>
+      <div class="site-footer__col">
+        <div class="site-footer__heading">Tienda</div>
+        <a href="{% url 'catalog:index' %}?view=all" class="site-footer__link">Catálogo</a>
+        <a href="{% url 'pages:about' %}" class="site-footer__link">Quiénes somos</a>
+        <a href="{% url 'pages:trust' %}" class="site-footer__link">¿Es confiable Pegasus Store?</a>
+        <a href="{% url 'orders:track' %}" class="site-footer__link">Seguir mi pedido</a>
+      </div>
+      <div class="site-footer__col">
+        <div class="site-footer__heading">Legal</div>
+        <a href="{% url 'pages:terms' %}" class="site-footer__link">Términos y condiciones</a>
+        <a href="{% url 'pages:privacy' %}" class="site-footer__link">Política de privacidad</a>
+        <a href="{% url 'pages:refunds' %}" class="site-footer__link">Cambios, devoluciones y garantía</a>
+        <a href="{% url 'pages:intellectual_property' %}" class="site-footer__link">Propiedad intelectual</a>
+        <a href="https://www.gob.mx/profeco" target="_blank" rel="noopener" class="site-footer__link">Profeco</a>
+      </div>
+      <div class="site-footer__col">
+        <div class="site-footer__heading">Atención al cliente</div>
+        <a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener" class="site-footer__link site-footer__link--accent">Escríbenos por WhatsApp</a>
+        {% if store.support_hours %}<span class="site-footer__note">{{ store.support_hours }}</span>{% endif %}
+        {% if store.instagram %}<a href="https://instagram.com/{{ store.instagram }}" target="_blank" rel="noopener" class="site-footer__link">Instagram @{{ store.instagram }}</a>{% endif %}
+        <a href="https://wa.me/{{ store.whatsapp }}?text={{ 'Hola, quiero radicar una petición, queja o reclamo (PQR)'|urlencode }}" target="_blank" rel="noopener" class="site-footer__link">Peticiones, quejas y reclamos</a>
+      </div>
+    </div>
+    <div class="site-footer__bottom">
+      <span>© {% now "Y" %} Pegasus Store México</span>
+      <button type="button" class="theme-toggle theme-toggle--footer" data-theme-toggle aria-label="Cambiar a modo oscuro">
+        {% include "includes/theme_icons.html" %}
+        <span class="theme-toggle__label">Cambiar tema</span>
+      </button>
+    </div>
+  </footer>
+
+  <div class="pg-mobile-nav-spacer"></div>
+  <nav class="mobile-nav" aria-label="Navegación móvil">
+    <a href="{% url 'catalog:index' %}" class="mobile-nav__item{% if request.resolver_match.view_name == 'catalog:index' and not request.GET.category and not request.GET.q %} is-active{% endif %}">
+      <span class="mobile-nav__icon-wrap"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.6 12 3.4l9 7.2M5.6 9.4V20h12.8V9.4M9.8 20v-5.4h4.4V20"></path></svg></span>
+      <span class="mobile-nav__label">Inicio</span>
+    </a>
+    <a href="{% url 'catalog:index' %}?view=all" class="mobile-nav__item{% if request.GET.category or request.GET.q %} is-active{% endif %}">
+      <span class="mobile-nav__icon-wrap"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.6h6.2v6.2H4zM13.8 4.6H20v6.2h-6.2zM4 13.2h6.2v6.2H4zM13.8 13.2H20v6.2h-6.2z"></path></svg></span>
+      <span class="mobile-nav__label">Catálogo</span>
+    </a>
+    <button type="button" class="mobile-nav__item" data-open-search>
+      <span class="mobile-nav__icon-wrap"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.2a6.8 6.8 0 1 0 0 13.6 6.8 6.8 0 0 0 0-13.6M20 20l-4.3-4.3"></path></svg></span>
+      <span class="mobile-nav__label">Buscar</span>
+    </button>
+    <a href="{% url 'orders:track' %}" class="mobile-nav__item{% if request.resolver_match.url_name == 'track' %} is-active{% endif %}">
+      <span class="mobile-nav__icon-wrap"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.3 20 7.6v8.8L12 20.7 4 16.4V7.6zM4 7.6l8 4.4 8-4.4M12 12v8.7"></path></svg></span>
+      <span class="mobile-nav__label">Pedido</span>
+    </a>
+    <a href="{% url 'cart:detail' %}" class="mobile-nav__item mobile-nav__item--cart{% if request.resolver_match.url_name == 'detail' and request.resolver_match.app_name == 'cart' %} is-active{% endif %}">
+      <span class="mobile-nav__icon-wrap mobile-nav__icon-wrap--cart">
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 4.3h2.3l2.3 10.4h9.4l1.9-7.3H6.2M10.1 19a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0M18.3 19a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0"></path></svg>
+        <span id="mobile-cart-badge" class="mobile-nav__badge{% if cart|length == 0 %} hidden{% endif %}">{{ cart|length }}</span>
+      </span>
+      <span class="mobile-nav__label">Carrito</span>
+    </a>
+  </nav>
+
+  {% block whatsapp_fab %}
+  <div class="wa-fab">
+    {% include "includes/whatsapp_button.html" with extra_class="wa-btn--fab" label="" %}
+  </div>
+  {% endblock %}
+
+  <div class="mobile-search-overlay" id="mobile-search-overlay" hidden>
+    <div class="mobile-search-overlay__bar">
+      {% include "includes/search_bar.html" with variant="hero" %}
+      <button type="button" class="mobile-search-overlay__close" data-close-search>Listo</button>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" data-sheet-backdrop hidden></div>
+  {% block bottom_sheets %}{% endblock %}
+
+  <div id="toast" class="toast" hidden>
+    <span id="toast-msg" class="toast__msg"></span>
+    <a href="{% url 'cart:detail' %}" class="toast__link">Ver carrito</a>
+  </div>
+
+</div>
+
+<script src="{% static 'js/theme-toggle.js' %}?v=2"></script>
+<script src="{% static 'js/rails.js' %}?v=2"></script>
+<script src="{% static 'js/sheets.js' %}?v=2"></script>
+<script src="{% static 'js/accordion.js' %}?v=2"></script>
+<script src="{% static 'js/toast.js' %}?v=2"></script>
+<script src="{% static 'js/quick-add.js' %}?v=4"></script>
+<script src="{% static 'js/product-card-carousel.js' %}?v=2"></script>
+
+<script>
+(function () {
+  /* header height -> CSS var, for sticky offsets */
+  function syncHeaderHeight() {
+    var header = document.getElementById('site-header');
+    if (!header) return;
+    document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+  }
+  window.addEventListener('load', syncHeaderHeight);
+  window.addEventListener('resize', syncHeaderHeight);
+  document.addEventListener('DOMContentLoaded', syncHeaderHeight);
+  requestAnimationFrame(syncHeaderHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncHeaderHeight);
+
+  /* mobile full-screen search */
+  var overlay = document.getElementById('mobile-search-overlay');
+  if (overlay) {
+    var pushedState = false;
+    function openSearch() {
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      var input = overlay.querySelector('input[name="q"]');
+      if (input) setTimeout(function () { input.focus(); }, 50);
+      if (!pushedState) {
+        history.pushState({ pgsSearch: true }, '');
+        pushedState = true;
+      }
+    }
+    function closeSearch(skipHistory) {
+      overlay.hidden = true;
+      document.body.style.overflow = '';
+      if (pushedState) {
+        pushedState = false;
+        if (!skipHistory) history.back();
+      }
+    }
+    document.querySelectorAll('[data-open-search]').forEach(function (btn) {
+      btn.addEventListener('click', openSearch);
+    });
+    document.querySelectorAll('[data-close-search]').forEach(function (btn) {
+      btn.addEventListener('click', function () { closeSearch(false); });
+    });
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) closeSearch(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !overlay.hidden) closeSearch(false);
+    });
+    window.addEventListener('popstate', function () {
+      if (!overlay.hidden) closeSearch(true);
+    });
+  }
+})();
+</script>
+
+{% block extra_scripts %}{% endblock %}
+{% block analytics_events %}{% endblock %}
+
+</body>
+</html>

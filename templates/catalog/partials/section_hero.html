@@ -1,0 +1,35 @@
+{% load humanize %}
+<section class="hero">
+  <div class="hero__col">
+    {# H1 con la búsqueda real de la tienda; el titular grande es la promesa. #}
+    <h1 class="hero__eyebrow">Tienda online en México con pago contra entrega</h1>
+    <p class="hero__title">Recibe primero.<br><em>Paga después.</em></p>
+    <p class="hero__lead">Productos para tu casa con envío a todo México. Revisas el pedido con el repartidor y solo entonces pagas, en efectivo o por transferencia.</p>
+    <div class="hero__ctas">
+      <a href="#mas-pedidos" class="btn-gold-pill">Ver los más pedidos</a>
+      <a href="{% url 'pages:trust' %}" class="btn-outline-pill">¿Es confiable? Míralo tú →</a>
+    </div>
+    <ul class="hero__proof">
+      <li><strong>$0</strong> por adelantado</li>
+      {% if section.context.review_summary.count %}<li><strong>★ {{ section.context.review_summary.average }}</strong> en {{ section.context.review_summary.count }} opinion{{ section.context.review_summary.count|pluralize:"es" }}</li>{% endif %}
+      {% if section.context.delivery_stats.show %}<li><strong>{{ section.context.delivery_stats.delivered|intcomma }}</strong> pedidos entregados</li>{% else %}<li><strong>Guía</strong> rastreable en cada envío</li>{% endif %}
+      <li><strong>Garantía</strong> legal en todo</li>
+    </ul>
+  </div>
+  {% if section.context.hero_products %}
+  <div class="hero__picks">
+    {% for product in section.context.hero_products %}
+    <a href="{% url 'catalog:detail' product.slug %}" class="hero-pick">
+      <div class="hero-pick__media">
+        {% if product.display_main_image %}<img src="{{ product.display_main_image }}" alt="{{ product.shown_name }}" loading="eager" fetchpriority="{% if forloop.first %}high{% else %}auto{% endif %}" decoding="async">{% endif %}
+      </div>
+      <div class="hero-pick__body">
+        <div class="hero-pick__name">{{ product.shown_name }}</div>
+        <div class="hero-pick__price">${{ product.price|floatformat:0|intcomma }}</div>
+        <div class="hero-pick__cod">{% if product.likely_free_shipping %}envío gratis · {% endif %}pagas al recibir</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>

@@ -1,0 +1,85 @@
+name: pegasus-store-mx
+
+region: nyc  # Change to: nyc | sfo | ams | sgp | lon | fra | blr | syd | tor
+
+services:
+  - name: web
+    github:
+      repo: TU_USUARIO/TU_REPO      # ← Cambia esto
+      branch: main                   # ← o master / SantiagoCode
+      deploy_on_push: true
+    build_command: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate --noinput
+    run_command: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb  # Basic ($5/mo) — escala después
+    envs:
+      - key: SECRET_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET            # Ingresa valor en DO dashboard, no aquí
+      - key: DEBUG
+        value: "False"
+        scope: RUN_AND_BUILD_TIME
+      - key: ALLOWED_HOSTS
+        value: "${APP_DOMAIN}"              # ← agregar el dominio de México cuando exista
+        scope: RUN_AND_BUILD_TIME
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://${APP_DOMAIN}"
+        scope: RUN_AND_BUILD_TIME
+      - key: DATABASE_URL
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET            # Pega tu Neon / DO Managed DB URL aquí
+      - key: DATABASE_URL_REQUIRED
+        value: "True"
+        scope: RUN_AND_BUILD_TIME
+      - key: DROPI_TOKEN
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      - key: DROPI_BASE_URL
+        value: "https://api.dropi.mx/integrations/"
+        scope: RUN_AND_BUILD_TIME
+      - key: DROPI_WEBHOOK_SECRET
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      - key: STORE_NAME
+        value: "Pegasus Store"
+        scope: RUN_AND_BUILD_TIME
+      - key: STORE_LEGAL_NAME
+        value: ""                          # ← razón social en México (p. ej. "... S.A. de C.V.")
+        scope: RUN_AND_BUILD_TIME
+      - key: STORE_ADDRESS
+        value: ""
+        scope: RUN_AND_BUILD_TIME
+      - key: STORE_CITY
+        value: ""                          # ← p. ej. "Guadalajara, Jalisco"
+        scope: RUN_AND_BUILD_TIME
+      - key: STORE_EMAIL
+        value: ""                          # ← correo de la tienda de México
+        scope: RUN_AND_BUILD_TIME
+      - key: STORE_WHATSAPP
+        value: ""                          # ← WhatsApp México, solo dígitos con 52 (p. ej. 5255XXXXXXXX)
+        scope: RUN_AND_BUILD_TIME
+      - key: STORE_WHATSAPP_DISPLAY
+        value: ""                          # ← p. ej. "+52 55 1234 5678"
+        scope: RUN_AND_BUILD_TIME
+      - key: STORE_SITE_URL
+        value: "https://${APP_DOMAIN}"
+        scope: RUN_AND_BUILD_TIME
+      - key: GA4_MEASUREMENT_ID
+        value: ""                          # ← propiedad GA4 de México
+        scope: RUN_AND_BUILD_TIME
+      - key: GOOGLE_ADS_ID
+        value: ""                          # ← cuenta Google Ads de México (AW-...)
+        scope: RUN_AND_BUILD_TIME
+      - key: META_PIXEL_ID
+        value: ""                          # ← píxel de Meta de México
+        scope: RUN_AND_BUILD_TIME
+      - key: CLARITY_PROJECT_ID
+        value: ""
+        scope: RUN_AND_BUILD_TIME
+      - key: PYTHON_VERSION
+        value: "3.13"
+        scope: BUILD_TIME

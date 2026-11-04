@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Mis Reseñas | Pegasus Store{% endblock %}
+
+{% block content %}
+<div class="account-shell account-shell--wide">
+  {% include "includes/page_header.html" with title="Mis reseñas" subtitle="Reseñas que has publicado y productos pendientes de reseñar" %}
+
+  <p class="account-foot"><a href="{% url 'accounts:dashboard' %}">← Mi cuenta</a></p>
+
+  {# ── Pendientes ── #}
+  {% if pending_reviews %}
+  <section class="account-section">
+    <div class="account-section__head">
+      <h2 class="account-section__title">Pendientes de reseñar ({{ pending_reviews|length }})</h2>
+    </div>
+    <div>
+      {% for product in pending_reviews %}
+      <div class="account-review-card">
+        <div class="account-review-card__head">
+          {% if product.image %}
+          <a href="{{ product.get_absolute_url }}" class="shrink-0">
+            <img src="{{ product.image.url }}" alt="{{ product.shown_name }}" class="account-review-card__thumb">
+          </a>
+          {% endif %}
+          <div class="min-w-0">
+            <a href="{{ product.get_absolute_url }}" class="account-review-card__name">{{ product.shown_name }}</a>
+            <p class="account-review-card__price">${{ product.price|floatformat:0|intcomma }}</p>
+          </div>
+        </div>
+
+        <form method="post" action="{% url 'catalog:submit_review' product.slug %}">
+          {% csrf_token %}
+          <input type="hidden" name="_next" value="dashboard">
+
+          <div class="review-score" role="radiogroup" aria-label="Puntuación para {{ product.shown_name }}">
+            {% for i in "12345" %}
+            <label class="cursor-pointer select-none">
+              <input type="radio" name="score" value="{{ i }}" class="sr-only review-score-input">
+              <span class="review-star">☆</span>
+            </label>
+            {% endfor %}
+          </div>
+
+          <textarea name="comment" rows="3" maxlength="2000"
+                    placeholder="Cuéntanos qué te pareció el producto… (opcional)"
+                    class="form-input account-review-card__note"></textarea>
+
+          <button type="submit" class="btn-gold-pill">Publicar reseña</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Mis reseñas publicadas ── #}
+  {% if my_reviews %}
+  <section class="account-section">
+    <div class="account-section__head">
+      <h2 class="account-section__title">Reseñas publicadas ({{ my_reviews|length }})</h2>
+    </div>
+    <div class="account-reviews-list">
+      {% for review in my_reviews %}
+      <article class="account-review-card account-review">
+        {% if review.product.image %}
+        <a href="{{ review.product.get_absolute_url }}" class="shrink-0">
+          <img src="{{ review.product.image.url }}" alt="{{ review.product.shown_name }}" class="account-review__thumb">
+        </a>
+        {% endif %}
+        <div class="account-review__body">
+          <a href="{{ review.product.get_absolute_url }}#reviews" class="account-review__name">{{ review.product.shown_name }}</a>
+          <div class="account-review__stars" aria-label="{{ review.score }} de 5 estrellas">
+            {% for i in "12345" %}
+            <span class="account-review__star{% if forloop.counter <= review.score %} account-review__star--on{% endif %}">★</span>
+            {% endfor %}
+          </div>
+          {% if review.comment %}
+          <p class="account-review__text">{{ review.comment }}</p>
+          {% else %}
+          <p class="account-review__text account-review__text--empty">Sin comentario</p>
+          {% endif %}
+          <div class="account-review__meta">
+            <span>{{ review.created_at|date:"d M Y" }}</span>
+            <a href="{{ review.product.get_absolute_url }}#reviews" class="account-review__edit">Editar reseña</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if not pending_reviews and not my_reviews %}
+  <div class="account-empty">
+    <p>Aún no tienes reseñas. Compra un producto para poder reseñarlo.</p>
+    <a href="{% url 'catalog:index' %}?view=all" class="btn-gold-pill">Ver catálogo</a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll('form').forEach(function (form) {
+    var labels = form.querySelectorAll('label');
+    if (!labels.length) return;
+    function paint(uptoIdx) {
+      labels.forEach(function (l, i) {
+        var star = l.querySelector('.review-star');
+        if (star) star.classList.toggle('is-filled', i <= uptoIdx);
+      });
+    }
+    labels.forEach(function (lbl, idx) {
+      var input = lbl.querySelector('input[type="radio"]');
+      if (!input) return;
+      lbl.addEventListener('mouseenter', function () { paint(idx); });
+      input.addEventListener('change', function () { paint(idx); });
+    });
+    form.addEventListener('mouseleave', function () {
+      var checked = form.querySelector('input[name="score"]:checked');
+      paint(checked ? parseInt(checked.value, 10) - 1 : -1);
+    });
+  });
+}());
+</script>
+{% endblock %}

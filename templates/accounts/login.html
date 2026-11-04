@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Iniciar sesión | Pegasus Store{% endblock %}
+
+{% block content %}
+<div class="account-shell">
+  {% include "includes/page_header.html" with title="Iniciar sesión" subtitle="Cuenta de cliente (no es el panel admin)" %}
+
+  <div class="account-grid">
+    <div class="account-note">
+      <p><strong>¿Primera compra?</strong> No necesitas cuenta — puedes comprar como invitado.</p>
+      <p>El equipo de Pegasus protege tus datos personales.</p>
+    </div>
+
+    <form method="post" class="account-card">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <p class="account-error">{{ form.non_field_errors.0 }}</p>
+      {% endif %}
+
+      <div class="account-fields">
+        <div>
+          <label class="account-field__label" for="id_username">Correo</label>
+          {{ form.username }}
+          {% if form.username.errors %}<span class="account-field__error">{{ form.username.errors.0 }}</span>{% endif %}
+        </div>
+
+        <div>
+          <label class="account-field__label" for="id_password">Contraseña</label>
+          <div class="form-input-wrap" data-password-toggle>
+            {{ form.password }}
+            <button type="button"
+                    class="form-input-wrap__toggle"
+                    data-password-toggle-btn
+                    aria-label="Mostrar contraseña"
+                    aria-pressed="false">
+              <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <svg class="icon-eye-off hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+              </svg>
+            </button>
+          </div>
+          {% if form.password.errors %}<span class="account-field__error">{{ form.password.errors.0 }}</span>{% endif %}
+        </div>
+
+        <button type="submit" class="account-submit">Entrar</button>
+
+        <p class="account-foot"><a href="{% url 'password_reset' %}">Olvidé mi contraseña</a></p>
+
+        <p class="account-foot account-foot--divided">
+          ¿No tienes cuenta? <a href="{% url 'accounts:signup' %}">Regístrate</a>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/password-toggle.js' %}?v=1"></script>
+{% endblock %}

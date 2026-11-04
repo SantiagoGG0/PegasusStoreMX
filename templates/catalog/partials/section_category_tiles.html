@@ -1,0 +1,27 @@
+{% load design_extras %}
+{% with cats=section.context.tile_categories %}
+{% if cats %}
+<section class="home-section" aria-labelledby="cats-title">
+  <div class="home-section__head">
+    <div>
+      <div class="home-section__eyebrow">Categorías</div>
+      <h2 class="home-section__title" id="cats-title">Compra por categoría</h2>
+    </div>
+    <a href="{% url 'catalog:index' %}?view=all" class="home-section__all">Ver todas →</a>
+  </div>
+  <div class="cat-tiles-rail" data-rail="cats-home">
+    <div class="cat-tiles-rail__row">
+      {% for cat in cats %}
+      <a href="{{ cat.dropi_id|category_url }}" class="cat-tile">
+        <div class="cat-tile__media">
+          {% if cat.image %}<img src="{{ cat.image.url }}" alt="" loading="lazy">{% elif cat.cover_url %}<img src="{{ cat.cover_url|resize_img:"240x240" }}" alt="" loading="lazy" decoding="async">{% else %}<span>{{ cat.name|first|upper }}</span>{% endif %}
+        </div>
+        <div class="cat-tile__name">{{ cat.name }}</div>
+        <div class="cat-tile__count">{{ cat.product_count }} productos</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endwith %}

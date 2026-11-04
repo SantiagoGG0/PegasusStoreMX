@@ -1,0 +1,51 @@
+# Pone al día los pedidos de la tienda con Dropi cada 3 horas (estado, guía,
+# transportadora), corriendo en GitHub y no en el PC. Ver
+# orders/reconcile.py. Son 1-3 consultas a Dropi por corrida y ~1-2 minutos de
+# Actions (≈ 8-16 min/día del cupo gratis de 2.000 min/mes).
+#
+# Secrets: los mismos de catalog-sync (DATABASE_URL, DROPI_TOKEN, SECRET_KEY).
+# Opcionales, para que el cliente reciba el aviso de cambio de estado:
+# EMAIL_HOST_USER y EMAIL_HOST_PASSWORD (correo) o TWILIO_* (WhatsApp). Sin
+# ellos el estado se actualiza igual y los botones de WhatsApp del admin
+# quedan listos para avisar a mano.
+name: order-sync
+
+on:
+  # Pausado hasta que la tienda de México esté en producción y una corrida
+  # manual pase.
+  # schedule:
+  #   - cron: "15 */3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: dropi-api
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL_REQUIRED: "True"
+      DROPI_TOKEN: ${{ secrets.DROPI_TOKEN }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      # Solo para saltar los checks de arranque del servidor web; no hay servidor aquí.
+      DEBUG: "True"
+      STORE_SITE_URL: ${{ vars.STORE_SITE_URL }}   # p. ej. https://www.<dominio-mexico>
+      EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+      EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+      TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # Avisa al cliente solo si el pedido tiene a lo sumo 3 días.
+      - name: Cruzar pedidos con Dropi
+        run: python manage.py reconcile_dropi_orders --notify-days 3

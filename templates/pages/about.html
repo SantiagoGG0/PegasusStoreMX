@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Quiénes somos | Pegasus Store{% endblock %}
+{% block meta_description %}Pegasus Store es una tienda en línea de {{ store.city }} que vende productos para el hogar con pago contra entrega en todo México. Así trabajamos.{% endblock %}
+{% block json_ld %}<script type="application/ld+json">{{ json_ld }}</script>{% endblock %}
+{% block main_class %}pg-main trust-main{% endblock %}
+
+{% block content %}
+<div class="trust-shell about-shell">
+  <div class="trust-eyebrow">Quiénes somos</div>
+  <h1 class="trust-title">Una tienda pensada para que comprar en línea no dé miedo.</h1>
+  <p class="trust-lead">Pegasus Store es una tienda en línea de {{ store.city }}. Vendemos productos prácticos para la casa, la cocina, la belleza y la familia, y los enviamos a todo el país con pago contra entrega: recibes, revisas y solo entonces pagas.</p>
+
+  <h2 class="trust-section-title">Por qué contra entrega</h2>
+  <p class="about-text">Mucha gente en México no compra en internet porque ya le quedaron mal: pagó por adelantado y el producto nunca llegó o no era lo que mostraban. Por eso decidimos no cobrar nada antes de la entrega. Si el pedido no es lo que esperabas, no lo recibes y no pierdes nada. Así el riesgo lo asumimos nosotros, no tú.</p>
+
+  <h2 class="trust-section-title">Cómo funciona un pedido</h2>
+  <ol class="about-steps">
+    <li><strong>Haces tu pedido</strong> en la tienda con tu nombre, WhatsApp y dirección. No necesitas crear cuenta ni dar datos de tarjeta.</li>
+    <li><strong>Lo preparamos</strong> en la bodega de nuestro proveedor aliado. Si necesitamos aclarar algo, te escribimos por WhatsApp.</li>
+    <li><strong>Lo despachamos con transportadora</strong> (la paquetería que cubre tu código postal) y te enviamos el número de guía para que lo rastrees. {{ delivery_info.zones_text }}</li>
+    <li><strong>Lo revisas y pagas</strong> al repartidor, en efectivo.</li>
+  </ol>
+  <p class="about-text">Trabajamos con bodegas aliadas en distintas ciudades del país. Por eso, si compras productos de dos bodegas diferentes, pueden llegarte en dos paquetes con guías distintas; te lo avisamos antes de confirmar.</p>
+
+  {% if delivery_stats.show %}
+  <div class="trust-stats">
+    <div class="trust-stat"><div class="trust-stat__value">{{ delivery_stats.delivered|intcomma }}</div><div class="trust-stat__label">pedidos entregados</div></div>
+    <div class="trust-stat"><div class="trust-stat__value">{{ delivery_stats.cities }}</div><div class="trust-stat__label">ciudades y municipios</div></div>
+  </div>
+  {% endif %}
+
+  <h2 class="trust-section-title">Datos de la empresa</h2>
+  <dl class="trust-identity__list">
+    <div><dt>Razón social</dt><dd>{{ store.legal_name }}</dd></div>
+    {% if store.nit %}<div><dt>RFC</dt><dd>{{ store.nit }}</dd></div>{% endif %}
+    <div><dt>Ubicación</dt><dd>{% if store.address %}{{ store.address }}, {% endif %}{{ store.city }}</dd></div>
+    <div><dt>WhatsApp</dt><dd><a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener">{{ store.whatsapp_display }}</a>{% if store.support_hours %} · {{ store.support_hours }}{% endif %}</dd></div>
+    {% if store.email %}<div><dt>Correo</dt><dd><a href="mailto:{{ store.email }}">{{ store.email }}</a></dd></div>{% endif %}
+  </dl>
+
+  <div class="trust-cta">
+    <p>¿Quieres comprobar algo antes de comprar? Mira las <a href="{% url 'pages:trust' %}">guías de envío y opiniones reales</a> o escríbenos.</p>
+    {% include "includes/whatsapp_button.html" with label="Escribir por WhatsApp" extra_class="wa-btn--solid" wa_message="Hola, quiero saber más sobre Pegasus Store" %}
+  </div>
+</div>
+{% endblock %}

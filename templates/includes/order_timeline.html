@@ -1,0 +1,21 @@
+{% with steps=order.status_timeline %}
+<div class="order-timeline">
+  {% for step in steps %}
+  <div class="order-timeline__row">
+    <div class="order-timeline__rail">
+      <span class="order-timeline__dot{% if step.current %} is-current{% elif step.done %} is-done{% endif %}"></span>
+      {% if not forloop.last %}<span class="order-timeline__line{% if step.done and not step.current %} is-done{% endif %}"></span>{% endif %}
+    </div>
+    <div class="order-timeline__body">
+      <div class="order-timeline__label{% if step.current %} is-current{% elif step.done %} is-done{% endif %}">{{ step.label }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% if order.tracking_url and show_tracking_link != False %}
+<p class="order-timeline__track">
+  Seguimiento{% if order.carrier %} ({{ order.carrier }}){% endif %}:
+  <a href="{{ order.tracking_url }}" target="_blank" rel="noopener noreferrer">Rastrear envío</a>
+</p>
+{% endif %}
+{% endwith %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Crear cuenta | Pegasus Store{% endblock %}
+
+{% block content %}
+<div class="account-shell">
+  {% include "includes/page_header.html" with title="Crear cuenta" subtitle="Guarda tus pedidos y consúltalos fácilmente" %}
+
+  <div class="account-note">
+    <p>No necesitas una cuenta para comprar — puedes hacerlo como invitado. La cuenta te permite ver el historial de tus pedidos en un solo lugar.</p>
+  </div>
+
+  <form method="post" class="account-card">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <p class="account-error">{{ form.non_field_errors.0 }}</p>
+    {% endif %}
+
+    <div class="account-fields">
+      <div>
+        <label class="account-field__label" for="id_first_name">Nombre</label>
+        {{ form.first_name }}
+        {% if form.first_name.errors %}<span class="account-field__error">{{ form.first_name.errors.0 }}</span>{% endif %}
+      </div>
+
+      <div>
+        <label class="account-field__label" for="id_email">Correo electrónico</label>
+        {{ form.email }}
+        {% if form.email.errors %}<span class="account-field__error">{{ form.email.errors.0 }}</span>{% endif %}
+      </div>
+
+      <div>
+        <label class="account-field__label" for="id_password1">Contraseña</label>
+        {{ form.password1 }}
+        {% if form.password1.errors %}<span class="account-field__error">{{ form.password1.errors.0 }}</span>{% endif %}
+      </div>
+
+      <div>
+        <label class="account-field__label" for="id_password2">Confirmar contraseña</label>
+        {{ form.password2 }}
+        {% if form.password2.errors %}<span class="account-field__error">{{ form.password2.errors.0 }}</span>{% endif %}
+      </div>
+
+      <button type="submit" class="account-submit">Crear cuenta</button>
+
+      <p class="account-foot">¿Ya tienes cuenta? <a href="{% url 'accounts:login' %}">Inicia sesión</a></p>
+    </div>
+  </form>
+</div>
+{% endblock %}

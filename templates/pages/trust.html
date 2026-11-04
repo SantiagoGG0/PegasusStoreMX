@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}¿Pegasus Store es confiable? Datos, guías y opiniones reales{% endblock %}
+{% block meta_description %}¿Pegasus Store es confiable? Mira quiénes somos, guías de envío que puedes rastrear y opiniones de clientes. Pagas contra entrega, después de revisar tu pedido.{% endblock %}
+{% block og_title %}¿Pegasus Store es confiable?{% endblock %}
+{% block json_ld %}<script type="application/ld+json">{{ json_ld }}</script>{% endblock %}
+{% block main_class %}pg-main trust-main{% endblock %}
+
+{% block content %}
+<div class="trust-shell">
+  <div class="trust-eyebrow">Compra sin riesgo</div>
+  <h1 class="trust-title">¿Pegasus Store es confiable?</h1>
+  <p class="trust-lead">Es lo primero que conviene preguntarse antes de comprar en una tienda en línea. Aquí está todo lo que puedes comprobar por tu cuenta. Y aun así, no pagas nada hasta tener el producto en la mano.</p>
+
+  <div class="trust-stats">
+    <div class="trust-stat"><div class="trust-stat__value">$0</div><div class="trust-stat__label">por adelantado: pagas al recibir</div></div>
+    {% if delivery_stats.show %}
+    <div class="trust-stat"><div class="trust-stat__value">{{ delivery_stats.delivered|intcomma }}</div><div class="trust-stat__label">pedidos entregados en {{ delivery_stats.cities }} ciudades</div></div>
+    {% endif %}
+    {% if review_summary.count %}
+    <div class="trust-stat"><div class="trust-stat__value">★ {{ review_summary.average }}</div><div class="trust-stat__label">promedio de {{ review_summary.count }} opinion{{ review_summary.count|pluralize:"es" }} de clientes</div></div>
+    {% else %}
+    <div class="trust-stat"><div class="trust-stat__value">100%</div><div class="trust-stat__label">de los envíos con guía rastreable</div></div>
+    {% endif %}
+  </div>
+
+  <h2 class="trust-section-title">Quién está detrás</h2>
+  <div class="trust-identity">
+    <dl class="trust-identity__list">
+      <div><dt>Razón social</dt><dd>{{ store.legal_name }}</dd></div>
+      {% if store.nit %}<div><dt>RFC</dt><dd>{{ store.nit }}</dd></div>{% endif %}
+      <div><dt>Ubicación</dt><dd>{% if store.address %}{{ store.address }}, {% endif %}{{ store.city }}</dd></div>
+      <div><dt>WhatsApp</dt><dd><a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener">{{ store.whatsapp_display }}</a>{% if store.support_hours %} · {{ store.support_hours }}{% endif %}</dd></div>
+      {% if store.email %}<div><dt>Correo</dt><dd><a href="mailto:{{ store.email }}">{{ store.email }}</a></dd></div>{% endif %}
+      {% if store.instagram %}<div><dt>Instagram</dt><dd><a href="https://instagram.com/{{ store.instagram }}" target="_blank" rel="noopener">@{{ store.instagram }}</a></dd></div>{% endif %}
+    </dl>
+    <a href="{% url 'pages:about' %}" class="btn-outline-pill">Conoce cómo trabajamos →</a>
+  </div>
+
+  <h2 class="trust-section-title">Cómo te protegemos</h2>
+  <ul class="trust-guarantees">
+    <li><strong>Pagas al recibir.</strong> En efectivo al repartidor. Nunca pedimos anticipos ni datos de tarjeta.</li>
+    <li><strong>Revisas antes de pagar.</strong> Si el producto no corresponde o llega dañado, no lo recibes y no pagas.</li>
+    <li><strong>Garantía de 90 días.</strong> Por la Ley Federal de Protección al Consumidor, si falla lo reparamos, lo cambiamos o te devolvemos el dinero, sin costo para ti.</li>
+    <li><strong>5 días hábiles para revocar tu compra.</strong> Si cambias de opinión después de recibirlo. <a href="{% url 'pages:refunds' %}">Ver la política completa</a>.</li>
+  </ul>
+
+  {% if recent_guides %}
+  <h2 class="trust-section-title">Guías despachadas</h2>
+  <p class="trust-section-sub">Nuestros últimos envíos reales. Por la privacidad de cada cliente mostramos solo parte del número de guía; quien compra recibe el número completo para rastrearlo.</p>
+  <div class="trust-guides">
+    {% for g in recent_guides %}
+    <div class="trust-guide">
+      <div class="trust-guide__row"><span>{{ g.carrier|default:"Guía" }}</span><span class="trust-guide__status{% if g.delivered %} is-delivered{% endif %}">{{ g.status }}</span></div>
+      <div class="trust-guide__number">{{ g.number }}</div>
+      <div class="trust-guide__route">{% if g.city %}Destino: {{ g.city }} · {% endif %}{{ g.packages }} paquete{{ g.packages|pluralize }} · {{ g.date|date:"j M" }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if store_reviews %}
+  <h2 class="trust-section-title">Lo que dicen nuestros clientes</h2>
+  <div class="reviews-grid">
+    {% for review in store_reviews %}{% include "includes/review_card.html" with show_product=True %}{% endfor %}
+  </div>
+  {% endif %}
+
+  <h2 class="trust-section-title">Preguntas frecuentes</h2>
+  <div class="accordion" data-accordion-group="trust-faq">
+    {% for item in faq_items %}
+    <div class="accordion__item faq-item">
+      <button type="button" class="accordion__trigger faq-item__trigger" data-accordion-trigger aria-expanded="false">
+        <span>{{ item.q }}</span><span class="faq-item__sign">+</span>
+      </button>
+      <div class="accordion__panel faq-item__panel" hidden>{{ item.a }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="trust-cta">
+    <p>¿Te queda alguna duda? Escríbenos y te responde una persona del equipo.</p>
+    {% include "includes/whatsapp_button.html" with label="Escribir por WhatsApp" extra_class="wa-btn--solid" wa_message="Hola, antes de comprar tengo una pregunta" %}
+  </div>
+</div>
+{% endblock %}

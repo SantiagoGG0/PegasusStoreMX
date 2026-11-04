@@ -1,0 +1,39 @@
+{% load humanize %}
+{% with ck_total=cart.get_total|add:shipping_info.total_shipping %}
+<aside class="checkout-summary" id="checkout-summary" data-submit-label="Confirmar pedido{% if has_shipping_city %} · ${{ ck_total|floatformat:0|intcomma }}{% endif %}">
+  <div class="checkout-summary__head">TU PEDIDO</div>
+  <div class="checkout-summary__lines">
+    {% for item in cart %}
+    <div class="checkout-summary__line">
+      <span>{{ item.display_name|default:item.name }} <span class="cart-summary__line-qty">×{{ item.quantity }}</span></span>
+      <span>${{ item.total_price|floatformat:0|intcomma }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% for entry in shipping_experiments %}
+  <div class="checkout-summary__experiment">
+    {% with shipping_experiment=entry.experiment %}{% include "catalog/partials/shipping_experiment.html" %}{% endwith %}
+  </div>
+  {% endfor %}
+  <div class="checkout-summary__totals">
+    <div class="cart-summary__row"><span>Subtotal</span><span>${{ cart.get_total|floatformat:0|intcomma }}</span></div>
+    {% if not has_shipping_city %}
+    <div class="cart-summary__row cart-summary__row--muted"><span>Envío</span><span>Elige tu ciudad para ver el envío</span></div>
+    {% else %}
+    {% for sup in shipping_info.supplier_breakdown %}
+    <div class="cart-summary__row cart-summary__row--shipping">
+      <span>Envío{% if shipping_info.supplier_breakdown|length > 1 %} bodega {{ forloop.counter }}{% endif %}</span>
+      <span class="{% if sup.is_free %}is-free{% endif %}">{% if sup.is_free %}Gratis{% else %}${{ sup.shipping_charged|floatformat:0|intcomma }}{% endif %}</span>
+    </div>
+    {% empty %}
+    <div class="cart-summary__row cart-summary__row--muted"><span>Envío</span><span>Calculando…</span></div>
+    {% endfor %}
+    {% endif %}
+    <div class="checkout-summary__total">
+      <span>{% if has_shipping_city %}Total al recibir{% else %}Total sin envío{% endif %}</span>
+      <span>${% if has_shipping_city %}{{ ck_total|floatformat:0|intcomma }}{% else %}{{ cart.get_total|floatformat:0|intcomma }}{% endif %}</span>
+    </div>
+  </div>
+  <div class="checkout-summary__note">Guía de envío enviada por WhatsApp apenas despachamos.</div>
+</aside>
+{% endwith %}

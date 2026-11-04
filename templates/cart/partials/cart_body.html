@@ -1,0 +1,82 @@
+{% load humanize %}
+{% if cart_items %}
+<div id="cart-page" class="cart-layout" data-update-url="{% url 'cart:update' %}" data-remove-url="{% url 'cart:remove' %}">
+
+  <p id="cart-flash" class="cart-flash hidden" role="status" aria-live="polite"></p>
+
+  <div id="supplier-notice-wrap">{% include "cart/partials/supplier_notice.html" %}</div>
+
+  <div class="cart-layout__grid">
+    <div class="cart-lines" id="cart-lines">
+      {% for item in cart_items %}
+      <article class="cart-line" data-cart-key="{{ item.cart_key }}" data-product-name="{{ item.product.shown_name|escape }}">
+        <a href="{% url 'catalog:detail' item.product.slug %}" class="cart-line__media">
+          {% if item.product.display_main_image %}<img src="{{ item.product.display_main_image }}" alt="{{ item.product.shown_name }}" />{% endif %}
+        </a>
+        <div class="cart-line__body">
+          <a href="{% url 'catalog:detail' item.product.slug %}" class="cart-line__name">{{ item.product.shown_name }}</a>
+          {% if item.variation_label %}<p class="cart-line__variant">{{ item.variation_label }}</p>{% endif %}
+          <p class="cart-line__unit">{{ item.unit_price|floatformat:0|intcomma }} c/u</p>
+        </div>
+        <div class="cart-line__stepper" role="group" aria-label="Cantidad">
+          <button type="button" data-cart-dec aria-label="Disminuir cantidad" class="cart-line__step-btn">&minus;</button>
+          <input type="number" data-cart-qty value="{{ item.quantity }}" min="1" max="{{ item.max_stock }}" class="cart-line__qty" aria-label="Cantidad" />
+          <button type="button" data-cart-inc aria-label="Aumentar cantidad" class="cart-line__step-btn"{% if item.quantity >= item.max_stock %} disabled{% endif %}>+</button>
+        </div>
+        <div class="cart-line__total" data-cart-subtotal>${{ item.subtotal|floatformat:0|intcomma }}</div>
+        <button type="button" data-cart-remove class="cart-line__remove" aria-label="Quitar {{ item.product.shown_name|escape }} del carrito" title="Quitar del carrito">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M9.5 6.5V4.8h5v1.7M6.6 6.5l.9 12.2a1.6 1.6 0 0 0 1.6 1.5h5.8a1.6 1.6 0 0 0 1.6-1.5l.9-12.2M10.3 10v6.6M13.7 10v6.6"></path></svg>
+        </button>
+      </article>
+      {% endfor %}
+    </div>
+
+    <aside class="cart-summary" id="cart-summary-state-wrap-outer">
+      <div id="cart-summary-state-wrap">
+        {% include "cart/partials/summary_panel.html" %}
+      </div>
+      <a href="{% url 'orders:checkout' %}" class="btn-gold-pill cart-summary__cta">Finalizar pedido</a>
+      <div class="cart-summary__note">No pedimos tarjeta. Confirmas en 1 minuto y puedes cancelar sin costo dentro de los 15 min, mientras no esté confirmado con la transportadora.</div>
+    </aside>
+  </div>
+</div>
+
+<div id="cart-remove-modal" class="cart-remove-modal hidden" role="dialog" aria-modal="true" aria-labelledby="cart-remove-modal-title" hidden>
+  <div class="cart-remove-modal__backdrop" data-cart-remove-dismiss></div>
+  <div class="cart-remove-modal__panel">
+    <h3 id="cart-remove-modal-title" class="cart-remove-modal__title">¿Quitar del carrito?</h3>
+    <p id="cart-remove-modal-text" class="cart-remove-modal__text"></p>
+    <div class="cart-remove-modal__actions">
+      <button type="button" class="cart-remove-modal__btn cart-remove-modal__btn--ghost" data-cart-remove-dismiss>Cancelar</button>
+      <button type="button" class="cart-remove-modal__btn cart-remove-modal__btn--danger" data-cart-remove-confirm>Sí, quitar</button>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="cart-empty" id="cart-empty-state">
+  <div class="cart-empty__text">Todavía no has agregado nada.</div>
+  <a href="{% url 'catalog:index' %}?view=all" class="btn-gold-pill">Explorar catálogo</a>
+</div>
+{% endif %}
+
+{% if suggested_products %}
+<section class="cart-suggested">
+  <h2 class="cart-suggested__title">{% if cart_items %}Completa tu compra{% else %}Agrega a tu carrito{% endif %}</h2>
+  <div id="cart-suggested-grid" class="product-grid">
+    {% for product in suggested_products %}
+      {% include "catalog/partials/product_card.html" %}
+    {% endfor %}
+  </div>
+  <div id="cart-suggested-load-more-wrap"
+       class="catalog-load-more{% if not suggested_page_obj.has_next %} hidden{% endif %}"
+       data-fragment-url="{% url 'cart:suggested_fragment' %}"
+       data-auto-load="true"
+       data-has-next="{{ suggested_page_obj.has_next|yesno:'true,false' }}"
+       data-next-page="2"
+       data-loaded-count="{{ suggested_products|length }}"
+       data-total-count="{{ suggested_page_obj.paginator.count }}">
+    <span id="cart-suggested-load-spinner" class="catalog-load-more__spinner hidden" aria-hidden="true"></span>
+    <p id="cart-suggested-load-more-status" class="catalog-load-more__status"></p>
+  </div>
+</section>
+{% endif %}
