@@ -709,6 +709,10 @@ def search_suggestions(request):
 
 @require_GET
 def robots_txt(request):
+    from config.middleware import is_preview_host
+
+    if is_preview_host(request):
+        return HttpResponse("User-agent: *\nDisallow: /\n", content_type="text/plain")
     lines = [
         "User-agent: *",
         "Allow: /",

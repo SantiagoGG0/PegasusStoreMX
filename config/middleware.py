@@ -27,6 +27,28 @@ class AdminPathGuardMiddleware:
         return self.get_response(request)
 
 
+def is_preview_host(request) -> bool:
+    """Direcciones temporales (p. ej. monkfish-app-xxxx.ondigitalocean.app):
+    Google no debe indexarlas, o el posicionamiento queda en un dominio que
+    después hay que mudar."""
+    host = request.get_host().split(":", 1)[0].lower()
+    return host.endswith(tuple(getattr(settings, "NOINDEX_HOST_SUFFIXES", ())))
+
+
+class PreviewHostNoindexMiddleware:
+    """X-Robots-Tag: noindex en los hosts temporales. Va antes de la caché de
+    páginas (que no distingue hosts) para calcularse en cada petición."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if is_preview_host(request):
+            response["X-Robots-Tag"] = "noindex, nofollow"
+        return response
+
+
 class CanonicalHostMiddleware:
     """301 de los hosts antiguos (LEGACY_HOSTS) al host de STORE_SITE_URL,
     conservando ruta y query.

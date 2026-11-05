@@ -73,6 +73,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     # Antes de la caché: una página guardada no debe servirse con 200 en un
     # host antiguo (pegasusstoreco.com sin www) en vez del 301 al canónico.
+    'config.middleware.PreviewHostNoindexMiddleware',
     'config.middleware.CanonicalHostMiddleware',
     'config.middleware.AnonymousPageCacheMiddleware',
     'config.middleware.AdminPathGuardMiddleware',
@@ -307,6 +308,9 @@ LEGACY_HOSTS = config(
     default="",
     cast=Csv(),
 )
+# Hosts temporales que Google no debe indexar (robots.txt cerrado y
+# X-Robots-Tag: noindex). El dominio propio queda abierto sin tocar nada.
+NOINDEX_HOST_SUFFIXES = (".ondigitalocean.app",)
 # Rutas que nunca se redirigen: las llama Dropi y no deben depender del host.
 CANONICAL_REDIRECT_EXEMPT_PATHS = ("/pedidos/webhook/",)
 STORE_EMAIL_LOGO_URL = config("STORE_EMAIL_LOGO_URL", default="")  # URL logo para emails

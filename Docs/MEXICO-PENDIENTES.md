@@ -40,7 +40,7 @@ de Dropi México propia (otro token, catálogo y proveedores).
   vacía. Llenar con las de la cuenta de Dropi México y sus IDs.
 
 ## Falta hacer
-- Dominio de México (vacío por ahora) y token de Dropi México registrado con
+- Dominio `pegasusstoremx.com` (se compra al final; pasos en `Docs/DOMINIO-PASOS.md`). Mientras tanto la dirección temporal está cerrada a Google. Dominio de México (vacío por ahora) y token de Dropi México registrado con
   ese dominio (hoy el token dice `www.pegasusstoreco.com`).
 - Datos de la tienda (vacíos por ahora): razón social, RFC, dirección,
   WhatsApp +52 y correo (admin → Configuración de la tienda, o `STORE_*`).
