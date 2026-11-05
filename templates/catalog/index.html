@@ -45,8 +45,8 @@
         <div class="sheet__chips">
           <button type="button" class="cat-pill{% if section.context.active_filters.envio %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('envio', '1')">Envío gratis</button>
           <button type="button" class="cat-pill{% if section.context.active_filters.rating %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('rating', '45')">★ 4,5 o más</button>
-          <button type="button" class="cat-pill{% if section.context.active_filters.precio == "a" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'a')">Hasta $50.000</button>
-          <button type="button" class="cat-pill{% if section.context.active_filters.precio == "c" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'c')">Más de $100.000</button>
+          <button type="button" class="cat-pill{% if section.context.active_filters.precio == "a" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'a')">Hasta $500</button>
+          <button type="button" class="cat-pill{% if section.context.active_filters.precio == "c" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'c')">Más de $1,000</button>
         </div>
         <div class="catalog-sidebar__cod">
           <div class="catalog-sidebar__cod-title">Todo con pago contra entrega</div>
@@ -75,8 +75,8 @@
     <div class="sheet__chips">
       <button type="button" class="cat-pill{% if section.context.active_filters.envio %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('envio', '1')">Envío gratis</button>
       <button type="button" class="cat-pill{% if section.context.active_filters.rating %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('rating', '45')">★ 4,5 o más</button>
-      <button type="button" class="cat-pill{% if section.context.active_filters.precio == "a" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'a')">Hasta $50.000</button>
-      <button type="button" class="cat-pill{% if section.context.active_filters.precio == "c" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'c')">Más de $100.000</button>
+      <button type="button" class="cat-pill{% if section.context.active_filters.precio == "a" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'a')">Hasta $500</button>
+      <button type="button" class="cat-pill{% if section.context.active_filters.precio == "c" %} is-active{% endif %}" onclick="window.toggleCatalogFilter && window.toggleCatalogFilter('precio', 'c')">Más de $1,000</button>
     </div>
     {% endif %}{% endfor %}
     <button type="button" class="sheet__cta" data-sheet-close>Ver productos</button>

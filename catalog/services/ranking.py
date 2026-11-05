@@ -9,7 +9,7 @@ Puntaje de relevancia (0-100) que ordena el catálogo por defecto.
 - stock:    pocas unidades = riesgo de quiebre después de la venta (0..1).
 - peso:     prioridad comercial de la categoría (settings.PRICING_CATEGORY_PROFILES).
 - precio:   un comprador que no conoce la tienda prueba primero con una
-            compra pequeña: el rango impulsivo ($35.000–$160.000) va
+            compra pequeña: el rango impulsivo ($299–$999 MXN) va
             adelante y los tickets altos bajan (price_factor).
 
 El resultado se normaliza dividiendo por el peso máximo configurado, así un
@@ -37,11 +37,11 @@ def _max_weight() -> float:
 def price_factor(price) -> float:
     """Pondera el precio para el orden "Relevancia" (ver docstring)."""
     value = float(price or 0)
-    if value < 35_000:
+    if value < 299:
         return 0.85
-    if value <= 160_000:
+    if value <= 999:
         return 1.0
-    if value <= 300_000:
+    if value <= 1999:
         return 0.8
     return 0.6
 
@@ -51,7 +51,7 @@ def compute_rank_score(product) -> int:
 
     keep = min_gain(product.cost)
     net = float(expected_net_profit(product.price - product.cost, keep))
-    target = max(float(keep), 5_000.0) * 2
+    target = max(float(keep), float(settings.MIN_PRODUCT_PROFIT)) * 2
     economics = 0.15 + 0.85 * max(0.0, min(net / target, 1.0)) if net > 0 else 0.1
 
     n_images = len(product.images or [])

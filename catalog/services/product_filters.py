@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class FilterOptions:
-    min_profit: int = 5_000         # MXN — floor used in pricing formula (cost + min_profit)
+    min_profit: int = 25            # MXN — floor used in pricing formula (cost + min_profit)
     min_stock: int = 5              # units available
     min_price: int = 0              # MXN — 0 = disabled; import all price points
     require_images: bool = True     # must have at least one image

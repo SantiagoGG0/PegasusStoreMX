@@ -85,9 +85,9 @@ def _same_supplier_first_queryset(product: Product):
 
 
 _PRICE_BUCKETS = {
-    "a": (None, 50000),
-    "b": (50000, 100000),
-    "c": (100000, None),
+    "a": (None, 500),
+    "b": (500, 1000),
+    "c": (1000, None),
 }
 
 

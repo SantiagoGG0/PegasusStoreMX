@@ -22,8 +22,9 @@ from django.db.models import F
 from django.utils import timezone
 
 BESTSELLER_DAYS = 120
-IMPULSE_PRICE_MIN = 35_000
-IMPULSE_PRICE_MAX = 160_000
+# MXN. Con la guía absorbida en el precio, el catálogo arranca en ~$299.
+IMPULSE_PRICE_MIN = 299
+IMPULSE_PRICE_MAX = 999
 CACHE_KEY = "home_bestseller_ids_v2"
 # Siempre se calcula y cachea la lista completa; cada llamada toma su parte
 # (el hero pide 2 y la sección 12 de la misma lista).
