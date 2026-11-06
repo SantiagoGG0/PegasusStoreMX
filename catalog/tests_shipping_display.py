@@ -113,3 +113,37 @@ class MainlandFreeShippingJsonLdTests(SimpleTestCase):
 
             p = Product(price=cost + settings.SHIPPING_ZONE_B_COST + keep - 10, cost=cost)
             self.assertFalse(free_shipping_outside_remote_zones(p))
+
+
+class FeedShippingTests(TestCase):
+    """El feed de Merchant declara el mismo envío que cobra el checkout por
+    una unidad, mientras la guía cueste lo mismo en todo el país."""
+
+    def setUp(self):
+        cat = Category.objects.create(dropi_id="store:belleza", name="Belleza")
+        self.paid = Product.objects.create(
+            dropi_id=1, name="Crema depilatoria", slug="crema", category=cat,
+            price=Decimal("199"), cost=Decimal("60"), stock=5, is_active=True,
+        )
+        self.free = Product.objects.create(
+            dropi_id=2, name="Secadora", slug="secadora", category=cat,
+            price=Decimal("899"), cost=Decimal("300"), stock=5, is_active=True,
+        )
+
+    def test_feed_shipping_matches_checkout(self):
+        from cart.shipping import calc_shipping
+        from catalog.feeds import feed_shipping_price
+
+        for product in (self.paid, self.free):
+            line = {"price": product.price, "cost": product.cost, "quantity": 1, "supplier_id": 7}
+            charged = calc_shipping([line], "Guadalajara")["total_shipping"]
+            self.assertEqual(feed_shipping_price(product), charged)
+        self.assertEqual(feed_shipping_price(self.free), Decimal("0"))
+        self.assertGreater(feed_shipping_price(self.paid), 0)
+
+    def test_feed_declares_only_free_shipping_when_zones_differ(self):
+        from catalog.feeds import feed_shipping_price
+
+        with self.settings(SHIPPING_ZONE_A_COST=150):
+            self.assertIsNone(feed_shipping_price(self.paid))
+            self.assertEqual(feed_shipping_price(self.free), Decimal("0"))

@@ -28,6 +28,7 @@ import shutil
 import tempfile
 import threading
 import time
+from decimal import Decimal
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -108,11 +109,29 @@ def feed_item(product, request) -> str:
         _tag("product_type", product.category.name if product.category else ""),
         _tag("google_product_category", _google_category(product)),
     ]
-    # El envío depende de la ciudad: se declara solo cuando es gratis en todo
-    # el país; el resto usa la configuración de envío de la cuenta.
-    if product.likely_free_shipping:
-        parts.append("<g:shipping><g:country>MX</g:country><g:price>0.00 MXN</g:price></g:shipping>")
+    shipping = feed_shipping_price(product)
+    if shipping is not None:
+        parts.append(f"<g:shipping><g:country>MX</g:country><g:price>{shipping:.2f} MXN</g:price></g:shipping>")
     return "<item>" + "".join(parts) + "</item>\n"
+
+
+def feed_shipping_price(product):
+    """Envío que cobra el checkout por una unidad de este producto, o None si
+    depende del municipio. En Dropi México la guía cuesta lo mismo en todo el
+    país (zonas en uso con la misma tarifa): se declara el envío exacto de cada
+    producto, gratis o no, para que Merchant no use una tarifa de cuenta que
+    no coincide con el checkout. Si las zonas cambian de tarifa, solo se
+    declara el envío gratis (que vale en cualquier municipio)."""
+    from cart.shipping import _zone_costs, max_guide_cost, zones_in_use
+
+    from .services.pricing import min_gain, shipping_charged
+
+    if product.likely_free_shipping:
+        return Decimal("0")
+    costs = _zone_costs()
+    if len({costs[zone] for zone in zones_in_use()}) != 1:
+        return None
+    return shipping_charged(product.price - product.cost, max_guide_cost(), min_gain(product.cost))
 
 
 def feed_queryset():
