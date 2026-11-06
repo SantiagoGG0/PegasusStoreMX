@@ -72,7 +72,7 @@ MIDDLEWARE = [
     'config.middleware.ServerTimingMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # Antes de la caché: una página guardada no debe servirse con 200 en un
-    # host antiguo (pegasusstoreco.com sin www) en vez del 301 al canónico.
+    # host secundario (pegasusstoremx.com sin www) en vez del 301 al canónico.
     'config.middleware.PreviewHostNoindexMiddleware',
     'config.middleware.CanonicalHostMiddleware',
     'config.middleware.AnonymousPageCacheMiddleware',
@@ -447,7 +447,7 @@ EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Pegasus Store <noreply@pegasusstore.co>')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Pegasus Store <noreply@pegasusstoremx.com>')
 
 # ── Security headers (always) ────────────────────────────────
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'

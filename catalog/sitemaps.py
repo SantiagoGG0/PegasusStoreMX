@@ -80,7 +80,7 @@ class _ProductRows:
 
 class CanonicalSitemap(Sitemap):
     """Usa el host de STORE_SITE_URL en vez del host de la petición, para que
-    el sitemap no liste URLs de pegasusstoreco.com o del dominio de DO."""
+    el sitemap no liste URLs del dominio sin www o del de DigitalOcean."""
 
     protocol = "https"
 

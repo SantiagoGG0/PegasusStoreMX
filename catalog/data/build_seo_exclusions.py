@@ -4,7 +4,7 @@
 
   --db       SQLite con el catálogo (copia local de producción).
   --sitemap  sitemap.xml descargado de producción: define el universo de
-             productos activos (curl -s https://www.pegasusstoreco.com/sitemap.xml).
+             productos activos (curl -s https://www.pegasusstoremx.com/sitemap.xml).
 
 Salida (separador ';'): slug;exclusion;canonical_slug;criterios;nombre, que
 se carga con `manage.py load_seo_exclusions`. También imprime un resumen.

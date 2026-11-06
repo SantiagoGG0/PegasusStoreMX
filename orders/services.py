@@ -38,7 +38,7 @@ def send_order_access_email(request, email: str) -> bool:
     path = reverse("orders:access_verify", kwargs={"token": token})
     link = request.build_absolute_uri(path)
 
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@pegasusstore.co")
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@pegasusstoremx.com")
     subject = "Accede a tus pedidos — Pegasus Store"
     body = (
         f"Hola,\n\n"
@@ -104,15 +104,13 @@ def extract_tracking_from_webhook(data: dict) -> tuple[str, str]:
 
 # Maps normalised carrier name substrings → tracking URL template (use {guide}).
 # Keys are checked as substrings of the uppercased carrier name, in order.
+# Solo respaldo: primero se usa el enlace de seguimiento que manda Dropi en el
+# webhook. Se quitaron las paqueterías de Colombia (Servientrega, TCC,
+# Interrapidísimo...). Quality-post, Tiui y Coordi (las que cotiza Dropi
+# México) se agregan con el formato real de sus guías en los primeros pedidos.
 _CARRIER_TRACKING = [
     ("VELOCES",         "https://tracking.veloces.app/"),
     ("ENVIA",           "https://app.envia.com/tracking/{guide}"),
-    ("SERVIENTREGA",    "https://www.servientrega.com.co/wps/portal/seguimiento-de-envios/rastreo?guia={guide}"),
-    ("COORDINADORA",    "https://www.coordinadora.com/portafolio-de-servicios/servicios-en-linea/rastreo-de-guias/?guia={guide}"),
-    ("INTERRAPIDISIMO", "https://www.interrapidisimo.com/rastreo/?guia={guide}"),
-    ("RAPIDISIMO",      "https://www.interrapidisimo.com/rastreo/?guia={guide}"),
-    ("TCC",             "https://www.tcc.com.co/guias?referencia={guide}"),
-    ("DEPRISA",         "https://www.deprisa.com/rastreo/?guia={guide}"),
     ("FEDEX",           "https://www.fedex.com/fedextrack/?trknbr={guide}"),
 ]
 
@@ -483,7 +481,7 @@ def notify_status_change(order, old_status: str) -> bool:
         f"\nGracias por confiar en Pegasus Store.\n"
     )
 
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@pegasusstore.co")
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@pegasusstoremx.com")
     
     try:
         html_body = render_to_string("emails/order_status_change.html", context)

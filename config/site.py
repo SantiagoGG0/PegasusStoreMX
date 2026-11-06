@@ -1,7 +1,7 @@
 """URL pública canónica del sitio (STORE_SITE_URL).
 
 Canonical, og:url, JSON-LD, sitemap y robots.txt deben apuntar siempre al
-host canónico, no al host con el que llegó la petición (pegasusstoreco.com
+host canónico, no al host con el que llegó la petición (pegasusstoremx.com
 o el dominio de DigitalOcean también responden). En desarrollo, sin
 STORE_SITE_URL, se usa el host de la petición.
 """
