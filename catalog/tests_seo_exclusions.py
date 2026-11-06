@@ -167,6 +167,11 @@ class BuildSeoExclusionsScriptTests(TestCase):
         spec = importlib.util.spec_from_file_location("build_seo_exclusions", path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
+        # Lista propia del test: la real está vacía hasta que México tenga tráfico orgánico.
+        protected = Path(tempfile.mkdtemp()) / "protected.txt"
+        protected.write_text("taladro-dewalt-pantalla\nretardante-brocha-pincelada-china-10ml\nlampara-lava-1\n",
+                             encoding="utf-8")
+        module.PROTECTED_FILE = protected
 
         tmp = Path(tempfile.mkdtemp())
         db = sqlite3.connect(tmp / "db.sqlite3")

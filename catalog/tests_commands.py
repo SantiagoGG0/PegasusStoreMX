@@ -97,7 +97,13 @@ class ConsolidateSeoTests(TestCase):
                              state="VAC", payment_method=Order.PAYMENT_COD, total=1, items=[{"product_id": sold.pk}])
         Product.objects.filter(pk=sold.pk).update(canonical_product=best)
 
-        call_command("consolidate_seo", "--apply", stdout=StringIO())
+        import tempfile
+        from unittest import mock
+
+        protected = Path(tempfile.mkdtemp()) / "protected.txt"
+        protected.write_text("ab-tomic-para-para-abdominales-profesion\n", encoding="utf-8")
+        with mock.patch("catalog.services.seo_consolidation.PROTECTED_SLUGS_FILE", protected):
+            call_command("consolidate_seo", "--apply", stdout=StringIO())
         canon = dict(Product.objects.values_list("pk", "canonical_product_id"))
 
         self.assertIsNone(canon[sold.pk])        # vendido: recupera su propia canónica
