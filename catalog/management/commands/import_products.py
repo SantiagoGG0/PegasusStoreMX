@@ -53,6 +53,22 @@ READ_TIMEOUT = 60   # seconds — Dropi API can be slow
 RATE_LIMIT_SLEEP = 30  # seconds to sleep when API returns 429
 
 
+DB_RETRY_WAITS = (5, 15, 30, 60, 120, 180)
+
+
+def _with_db_retry(fn):
+    """Neon corta conexiones inactivas y a veces rechaza conexiones por unos
+    minutos: se reconecta y reintenta con esperas crecientes (~7 min en total)
+    antes de rendirse, para que una importación de horas no muera por eso."""
+    for wait in DB_RETRY_WAITS:
+        try:
+            return fn()
+        except DjOperationalError:
+            connection.close()
+            time.sleep(wait)
+    return fn()
+
+
 class Command(BaseCommand):
     help = "Importa productos desde Dropi aplicando filtros de calidad."
 
@@ -190,7 +206,9 @@ class Command(BaseCommand):
             fields["price"] = product.price = decision.price
             fields["pricing_status"] = product.pricing_status = decision.status
         fields["rank_score"] = compute_rank_score(product)
-        Product.objects.filter(pk=product.pk).update(**fields)
+        # Bajar la galería tarda (límite de Dropi) y Neon corta conexiones
+        # inactivas: si se cayó, se reconecta y se reintenta una vez.
+        _with_db_retry(lambda: Product.objects.filter(pk=product.pk).update(**fields))
 
     def _fetch_page(self, client: DropiClient, page: int, page_size: int, opts: dict) -> list:
         """Fetch one page from Dropi with retry/backoff logic."""
@@ -430,18 +448,7 @@ class Command(BaseCommand):
 
                     if not dry_run:
                         try:
-                            product, created = upsert_product(raw)
-                        except DjOperationalError:
-                            # DB connection dropped mid-page — reconnect and retry once
-                            connection.close()
-                            try:
-                                product, created = upsert_product(raw)
-                            except Exception as exc:
-                                self.stdout.write(
-                                    self.style.ERROR(f"  ERROR [{dropi_id}] {name}: {exc}")
-                                )
-                                stats["errors"] += 1
-                                continue
+                            product, created = _with_db_retry(lambda: upsert_product(raw))
                         except Exception as exc:
                             self.stdout.write(
                                 self.style.ERROR(f"  ERROR [{dropi_id}] {name}: {exc}")
